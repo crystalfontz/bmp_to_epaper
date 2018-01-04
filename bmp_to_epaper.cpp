@@ -312,11 +312,11 @@ if(enteredModule.getGBits() == 1)
 
 #if ONE_DIM
 		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst unsigned char Grey_2BPP[%d] PROGMEM = \n  {",
+			"\nconst uint8_t Grey_2BPP[%d] PROGMEM = \n  {",
 			bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x03) >> 2));
 #else
 		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst unsigned char Grey_2BPP[%d][%d] PROGMEM =\n  {{",
+			"\nconst uint8_t Grey_2BPP[%d][%d] PROGMEM =\n  {{",
 			bitmapInfoHeader.biHeight,
 			(bitmapInfoHeader.biWidth + 0x03) >> 2);
 #endif
@@ -453,11 +453,11 @@ if(enteredModule.getGBits() == 1)
 		//Write out the header information to the red file.
 #if ONE_DIM
 		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst unsigned char Red_1BPP[%d] PROGMEM =\n  {",
+			"\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {",
 			bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
 #else
 		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst unsigned char Red_1BPP[%d][%d] PROGMEM =\n  {{",
+			"\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
 			bitmapInfoHeader.biHeight,
 			(bitmapInfoHeader.biWidth + 0x07) >> 3);
 #endif
@@ -576,11 +576,11 @@ if(enteredModule.getGBits() == 1)
 		//Write out the header information to the red file.
 #if ONE_DIM
 		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst unsigned char Mono_1BPP[%d] PROGMEM =\n  {",
+			"\nconst uint8_t Mono_1BPP[%d] PROGMEM =\n  {",
 			bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
 #else
 		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst unsigned char Mono_1BPP[%d][%d] PROGMEM =\n  {{",
+			"\nconst uint8_t Mono_1BPP[%d][%d] PROGMEM =\n  {{",
 			bitmapInfoHeader.biHeight,
 			(bitmapInfoHeader.biWidth + 0x07) >> 3);
 #endif
