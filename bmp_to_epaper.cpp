@@ -500,7 +500,7 @@ if(enteredModule.getGBits() == 1)
 					sub_pixel_1bit;
 
 				//Check for the special case of it being a red pixel
-				if ((171 < red) && (green < 85) && (blue < 85))
+				if ((171 < red) && (green < 110) && (blue < 110))
 				{
 					//since we are writing the black/grey/white plane, we
 					//want to put white wherre this red pixel would fall.

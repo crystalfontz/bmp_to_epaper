@@ -58,8 +58,8 @@ void Module::setModuleType(std::string enteredModule)
 	}
 	if (!found)
 	{
-		printf("module part number %s is not a valid Part number./n", enteredModule.c_str());
-		printf("the following are valid partnumbers:/n");
+		printf("Module part number %s is not a valid Part number.\n", enteredModule.c_str());
+		printf("The following are valid partnumbers:\n");
 		for (int i = 0; i < moduleCount; i++)
 		{
 			printf("%s\n", moduleType[i].c_str());
