@@ -6,61 +6,179 @@
 //============================================================================
 #include "stdafx.h"
 #include "ModuleType.h"
-#define moduleCount 8
 //This array classifies the existing ePaper modules
-std::string moduleType[moduleCount] =
-{
-	"CFAP128296C00290",
-	"CFAP128296D00290",
-	"CFAP122250A00213",
-	"CFAP200200A00154",
-	"CFAP128296A00290",
-	"CFAP152152A00154",
-	"CFAP104212C00213",
-	"CFAP176264A00270"
-};
 
-//This array associates the number of red bits
-const int moduleRedBits[moduleCount] = { 0,1,0,0,0,1,1,1 };
 
-//This array associates the number of grey bits
-const int moduleGreyBits[moduleCount] = { 1,1,1,1,2,1,1,1 };
-
-//this array sets the horizontal pixel length
-const int screenWidth[moduleCount] = { 128,128,122,200,128,152,104,176 };
-
-//this array sets the vertical pixel length
-const int screenLength[moduleCount] = { 296,296,250,200,296,152,212,264 };
-
-//this array sets if the colors are reverse - true for if reversed
-bool reversedColor[moduleCount] = { false,false,false,true,false,false,false,false };
-
-//this array sets if the screen updates left to right - true if left to right
-bool leftToRightDisplay[moduleCount] = { true,true,true,false,true,true,true,true };
-
+//============================================================================
+//Information on the following block of code:
+//gBits sets the number of bits the ePaper uses for black and white
+//cBits sets the number of bits the ePaper uses for color;
+//colorType
+//  0: Mono
+//  1: Red
+//  2: Yellow
+//
+//modWidth sets the width of the dispaly
+//modLength sets the length of the display
+//reverseColor sets which polarity the bits are stored in the bitmap
+//leftToRight true if the screen is set to update left to right, false if vice versa
 void Module::setModuleType(std::string enteredModule)
 {
 	bool found = false;
-	for (int i = 0; i < moduleCount; i++) 
+    moduleMaster = enteredModule;
+    if (enteredModule == "CFAP104212C00213")
+    {
+      gBits = 1;
+      cBits = 1;
+      colorType = 1;
+
+      modWidth = 104;
+      modLength = 212;
+      reverseColor = false;
+      leftToRight = true;
+    }
+  else if (enteredModule == "CFAP122250A00213")
+  {
+    gBits = 1;
+    cBits = 0;
+    colorType = 0;
+
+    modWidth = 122;
+    modLength = 250;
+    reverseColor = false;
+    leftToRight = true;
+  }
+    else if (enteredModule == "CFAP128296A00290")
+    {
+      gBits = 2;
+      cBits = 0;
+      colorType = 0;
+
+      modWidth = 128;
+      modLength = 296;
+      reverseColor = false;
+      leftToRight = true;
+    }
+  else if (enteredModule == "CFAP128296C00290")
+  {
+    gBits = 1;
+    cBits = 0;
+    colorType = 0;
+
+    modWidth = 128;
+    modLength = 296;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP128296D00290")
+  {
+    gBits = 1;
+    cBits = 1;
+    colorType = 1;
+
+    modWidth = 128;
+    modLength = 296;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP128296E00290")
+  {
+    gBits = 1;
+    cBits = 1;
+    colorType = 2;
+
+    modWidth = 128;
+    modLength = 296;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP152152A00154")
+  {
+    gBits = 1;
+    cBits = 1;
+    colorType = 1;
+
+    modWidth = 152;
+    modLength = 152;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP176264A00270")
+  {
+    gBits = 1;
+    cBits = 1;
+    colorType = 1;
+
+    modWidth = 176;
+    modLength = 264;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP176264B00270")
+  {
+    gBits = 1;
+    cBits = 0;
+    colorType = 0;
+
+    modWidth = 176;
+    modLength = 264;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP200200A00154")
+  {
+    gBits = 1;
+    cBits = 0;
+    colorType = 0;
+
+    modWidth = 122;
+    modLength = 250;
+    reverseColor = false;
+    leftToRight = false;
+  }
+  else if (enteredModule == "CFAP400300C00420")
+  {
+    gBits = 1;
+    cBits = 1;
+    colorType = 2;
+
+    modWidth = 400;
+    modLength = 300;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP640384A00750")
+  {
+    gBits = 1;
+    cBits = 0;
+    colorType = 0;
+
+    modWidth = 640;
+    modLength = 384;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else
 	{
-		if (enteredModule == moduleType[i])
-		{
-			moduleMaster = moduleType[i];
-			gBits = moduleGreyBits[i];
-			rBits = moduleRedBits[i];
-			modWidth = screenWidth[i];
-			modLength = screenLength[i];
-			reverseColor = reversedColor[i];
-			leftToRight = leftToRightDisplay[i];
-			found = true;
-			break;
-		}
-	}
-	if (!found)
-	{
+    int size = 12;
+    std::string moduleType[] =
+    {
+      "CFAP104212C00213",
+      "CFAP122250A00213",
+      "CFAP128296A00290",
+      "CFAP128296C00290",
+      "CFAP128296D00290",
+      "CFAP128296E00290",
+      "CFAP152152A00154",
+      "CFAP176264A00270",
+      "CFAP176264B00270",
+      "CFAP200200A00154",
+      "CFAP400300C00420",
+      "CFAP640384A00750"
+    };
 		printf("Module part number %s is not a valid Part number.\n", enteredModule.c_str());
 		printf("The following are valid partnumbers:\n");
-		for (int i = 0; i < moduleCount; i++)
+		for (int i = 0; i < size; i++)
 		{
 			printf("%s\n", moduleType[i].c_str());
 		}
@@ -107,17 +225,33 @@ int Module::getGBits()
 	}
 }
 
-int Module::getRBits()
+int Module::getCBits()
 {
-	if (rBits != NULL)
+	if (cBits != NULL)
 	{
-		return rBits;
+		return cBits;
 	}
 	else
 	{
-		printf("no red bit value stored");
+		printf("no color bit value stored");
 		return 0;
 	}
+}
+
+int Module::getColor()
+{
+  if (colorType == 0)
+  {
+    return 0;
+  }
+  if (colorType == 1)
+  {
+    return 1;
+  }
+  if (colorType == 2)
+  {
+    return 2;
+  }
 }
 
 

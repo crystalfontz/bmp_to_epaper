@@ -203,6 +203,7 @@ int main(int argc, char*  argv[])
 	if (3 != argc)
 	{
 		usage(argv[0]);
+		printf("Incorrect number of arguments entered");
 		return(1);
 	}
 
@@ -222,6 +223,7 @@ int main(int argc, char*  argv[])
 	if (NULL == bitmapData)
 	{
 		printf("Error reading/processing the BMP.\n");
+		system("pause");
 		usage(argv[0]);
 		return(1);
 	}
@@ -282,7 +284,7 @@ int main(int argc, char*  argv[])
 if(enteredModule.getGBits() == 2)
 	fprintf(Grey_2bit_and_Red_1bit_out, "#define WIDTH_GREY_BYTES (%d)\n", (bitmapInfoHeader.biWidth + 0x03) >> 2);
 
-if(enteredModule.getRBits() == 1)
+if(enteredModule.getCBits() == 1)
 	fprintf(Grey_2bit_and_Red_1bit_out, "#define WIDTH_RED_BYTES  (%d)\n", (bitmapInfoHeader.biWidth + 0x07) >> 3);
 
 if(enteredModule.getGBits() == 1)
@@ -447,7 +449,7 @@ if(enteredModule.getGBits() == 1)
 		}
 	}//  OUTPUT2BPPGREY
 	//---------------------------------------------------------------------------
-	if (enteredModule.getRBits() == 1)
+	if (enteredModule.getCBits() == 1)
 	{
 		//The 2-bit grey is done, now dump out the 1-bit red
 		//Write out the header information to the red file.
@@ -500,17 +502,37 @@ if(enteredModule.getGBits() == 1)
 					sub_pixel_1bit;
 
 				//Check for the special case of it being a red pixel
-				if ((171 < red) && (green < 110) && (blue < 110))
-				{
-					//since we are writing the black/grey/white plane, we
-					//want to put white wherre this red pixel would fall.
-					sub_pixel_1bit = 0x01;  // 1 = Red
-				}
-				else
-				{
-					//default to no ink
-					sub_pixel_1bit = 0x00;  // 10 = White
-				}
+        if (enteredModule.getColor() == 1)
+        {
+          if ((171 < red) && (green < 110) && (blue < 110))
+          {
+            //since we are writing the black/grey/white plane, we
+            //want to put white wherre this red pixel would fall.
+            sub_pixel_1bit = 0x01;  // 1 = Red
+          }
+          else
+          {
+            //default to no ink
+            sub_pixel_1bit = 0x00;  // 10 = White
+          }
+        }
+
+        //Check for the special case of it being a yellow pixel
+        if (enteredModule.getColor() == 2)
+        {
+          if ((228 < red) && (180 < green) && (blue < 30))
+          {
+            //since we are writing the black/grey/white plane, we
+            //want to put white wherre this red pixel would fall.
+            sub_pixel_1bit = 0x01;  // 1 = Red
+          }
+          else
+          {
+            //default to no ink
+            sub_pixel_1bit = 0x00;  // 10 = White
+          }
+        }
+
 
 				//Insert those bits into the correct slot of this_2bpp_byte
 				this_1bpp_byte |= (sub_pixel_1bit) << (7 - sub_pixel_count);
@@ -571,6 +593,7 @@ if(enteredModule.getGBits() == 1)
 		}
 	}  //  OUTPUT1BPPRED
 	//---------------------------------------------------------------------------
+
 	if (enteredModule.getGBits() == 1)
 	{
 		//Write out the header information to the red file.
