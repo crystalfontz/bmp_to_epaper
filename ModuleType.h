@@ -7,8 +7,7 @@ class Module
 {
 private:
 	std::string moduleMaster;
-	int cBits;
-  int colorType;
+	int rBits;
 	int gBits;
 	int modWidth;
 	int modLength;
@@ -19,8 +18,7 @@ public:
 	void setModuleType(std::string);
 	int getWidth(void);
 	int getLength(void);
-	int getCBits(void);
-  int getColor();
+	int getRBits(void);
 	int getGBits(void);
 	bool getLTR(void);
 	bool getReverseColor(void);
