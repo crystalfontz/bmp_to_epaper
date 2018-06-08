@@ -137,7 +137,7 @@ bool bmptoepaperGUI::MyForm::openStuff()
   bool opened = false;
   openFileDialog1 = gcnew OpenFileDialog;
 
-  openFileDialog1->InitialDirectory = "V:\\_CFA - OTS\\CFAP(ePaper)\\CFAP400300C0 - 0420 = 4.2 BWY\\media\\";
+  //openFileDialog1->InitialDirectory = "V:\\_CFA - OTS\\CFAP(ePaper)\\CFAP400300C0 - 0420 = 4.2 BWY\\media\\";
   openFileDialog1->Filter = "bmp files (*.bmp)|*.bmp";
   openFileDialog1->FilterIndex = 2;
   openFileDialog1->RestoreDirectory = true;
