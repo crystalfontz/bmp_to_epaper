@@ -37,6 +37,17 @@ void Module::setModuleType(std::string enteredModule)
       reverseColor = false;
       leftToRight = true;
     }
+    if (enteredModule == "CFAP104212D00213")
+    {
+      gBits = 1;
+      cBits = 0;
+      colorType = 0;
+
+      modWidth = 104;
+      modLength = 212;
+      reverseColor = false;
+      leftToRight = true;
+    }
   else if (enteredModule == "CFAP122250A00213")
   {
     gBits = 1;
