@@ -89,3 +89,11 @@ Release/MONO/vc100.pdb
 /converted pics
 /Debug/bmp_to_epaper.exe
 /CFAP152152A0-0154-Splash.h
+/.svn
+/.vs/bmp_to_epaper/v15
+/bmp_to_epaper/.vs/bmp_to_epaper/v15
+/bmp_to_epaper/converted pics
+/bmp_to_epaper/Debug
+/bmp_to_epaper/Release
+/bmp_to_epaper_GUI/Debug
+/bmp_to_epaper_GUI/Release
