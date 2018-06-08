@@ -36,6 +36,26 @@ void main(array<String^>^ args) {
       fileName->Visible = true;
       fileName2->Visible = true;
       pictureBox2->Image = bitmap;
+      Color pixelColor;
+      int red;
+      int green;
+      int blue;
+      for (int i = 0; i < bitmap->Height; i++)
+      {
+        for (int j = 0; j < bitmap->Width; j++)
+        {
+          pixelColor = bitmap->GetPixel(j, i);
+          red = pixelColor.R;
+          green = pixelColor.G;
+          blue = pixelColor.B;
+          if ((171 < red) && (green < 110) && (blue < 110) && redDrop->Text != "1-bit") {
+            redDrop->Text = "1-bit";
+          }
+          if ((228 < red) && (180 < green) && (blue < 30) && yelDrop->Text != "1-bit") {
+            yelDrop->Text = "1-bit";
+          }
+        }
+      }
       mainSelectionPanel->Visible = true;
       ePaperSettingsPanel->Visible = true;
       convertButton->Enabled = true;
@@ -105,11 +125,11 @@ System::Void bmptoepaperGUI::MyForm::convertButton_Click(System::Object^  sender
     ePaperModule.initializeDisplay(redInt, yelInt, bwInt, LTRBool, TTBBool, invBool);
     std::string pathLocation = msclr::interop::marshal_as<std::string>(openFileDialog1->FileName);
     processImage(ePaperModule, pathLocation);
+    CString action = "open";
+    ShellExecute(NULL, action, (CString)getOutputFile(pathLocation.c_str()).c_str(), NULL, NULL, SW_SHOW);
     std::string message = "File saved to:\n" + pathLocation;
     MessageBox::Show(gcnew String(message.c_str()), "File Saved");
 
-    CString action = "open";
-    ShellExecute(NULL, action, (CString)getOutputFile(pathLocation.c_str()).c_str(), NULL, NULL, SW_SHOW);
   }
 }
 bool bmptoepaperGUI::MyForm::openStuff()

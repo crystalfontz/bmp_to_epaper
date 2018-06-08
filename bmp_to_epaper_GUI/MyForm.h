@@ -273,7 +273,7 @@ namespace bmptoepaperGUI {
              this->bwDrop->Name = L"bwDrop";
              this->bwDrop->Size = System::Drawing::Size(67, 21);
              this->bwDrop->TabIndex = 11;
-             this->bwDrop->Text = L"N/A";
+             this->bwDrop->Text = L"1-bit";
              this->bwDrop->TextUpdate += gcnew System::EventHandler(this, &MyForm::bwDrop_TextUpdate);
              // 
              // pictureBox3

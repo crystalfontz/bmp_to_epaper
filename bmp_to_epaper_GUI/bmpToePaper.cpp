@@ -673,8 +673,8 @@ int processImage(Module moduleData, std::string stringPath)
         unsigned char
           sub_pixel_1bit;
 
-        //White is just above 50% grey
-        if (127 > ((red*.21) + (green*.72) + (blue*.07)))
+        //check for the special case of yellow
+        if ((228 < red) && (180 < green) && (blue < 30))
         {
           //TODO check this 
           //black, put the ink
