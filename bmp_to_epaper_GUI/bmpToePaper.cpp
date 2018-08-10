@@ -50,6 +50,7 @@
 #include "stdafx.h"
 #include "windows.h"
 #include "ePaperModule.h"
+#include <queue>
 
 
 //Set to 1 for a one dimensional array. Set to 0 for the more conventional
@@ -443,6 +444,9 @@ int processImage(Module moduleData, std::string stringPath)
   if (moduleData.getRBits() == 1)
   {
     //Write out the header information to the red file.
+    if (1)
+    {
+
 #if ONE_DIM
     fprintf(OutputDataFile,
       "\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {",
@@ -453,7 +457,9 @@ int processImage(Module moduleData, std::string stringPath)
       bitmapInfoHeader.biHeight,
       (bitmapInfoHeader.biWidth + 0x07) >> 3);
 #endif
+    }
     //Now we just loop down the file, line by line (bottom first),
+    std::deque <unsigned char>	redQueue;
     for (row = 0; row < bitmapInfoHeader.biHeight; row++)
     {
       int
@@ -479,6 +485,12 @@ int processImage(Module moduleData, std::string stringPath)
         this_1bpp_byte;
       int
         sub_pixel_count;
+      unsigned char holder1 = 0x00;
+      unsigned char holder2 = 0x00;
+      unsigned char holder3 = 0x00;
+      unsigned int rle_counter = 0;
+      boolean rle_active = false;
+
 
       this_1bpp_byte = 0x00;
       sub_pixel_count = 0;
@@ -550,31 +562,106 @@ int processImage(Module moduleData, std::string stringPath)
         //next 4 bytes.
         if (7 < sub_pixel_count)
         {
-          if (first_data_of_this_line_written)
+          
+          //TODO: finish IF statement to check if RLE decoding is selected
+          if (0)
           {
-            fprintf(OutputDataFile, ",");
-          }
-          first_data_of_this_line_written = 1;
 
-          //Then write out the 8-bit packed pixel byte
-          fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+            //if we're past the first two bytes of data
+            if (first_data_of_this_line_written == 1)
+            {
+              //if we have a situation where we can increment the rle counter
+              if (holder1 == holder2 && holder2 == this_1bpp_byte)
+              {
+                if (rle_active)
+                {
+                  rle_counter++;
+                }
+                else
+                {
+                  rle_counter = 3;
+                  rle_active = true;
+                }
+              }
+              //situation where we've hit a byte that stops us from incrementing the rle counter
+              else if (rle_active)
+              {
+                if (holder1 != holder2)
+                {
+                  fprintf(OutputDataFile, "%d,", rle_counter);
+                  fprintf(OutputDataFile, "0x%02X,", holder1);
+                  rle_active = false;
+                }
+              }
+              //situation where we are not in a loop of the rle counter working
+              else
+              {
+                fprintf(OutputDataFile, "1,");
+                fprintf(OutputDataFile, "0x%02X,", holder1);
+              }
+            }
+            else
+            {
+              if (first_data_of_this_line_written == -1)
+              {
+                first_data_of_this_line_written = 1;
+              }
+              else
+              {
+                first_data_of_this_line_written = -1;
+              }
+            }
+            holder1 = holder2;
+            holder2 = this_1bpp_byte;
+          }
+          else
+          {
+
+            if (first_data_of_this_line_written)
+            {
+              fprintf(OutputDataFile, ",");
+            }
+            //Then write out the 8-bit packed pixel byte
+            fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+          }
           //Reset the byte accumulator and count
           this_1bpp_byte = 0;
           sub_pixel_count = 0;
+          first_data_of_this_line_written = 1;
         }
       }
       //This is the last entry for this line. If we have not just written
       //out the last byte, of this line write it out now.
-      if (sub_pixel_count)
+      //TODO: finish IF statement to check if RLE decoding is selected
+      if (0)
       {
-        if (first_data_of_this_line_written)
+        if (rle_active)
         {
-          fprintf(OutputDataFile, ",");
+          fprintf(OutputDataFile, "%d,", rle_counter);
+          fprintf(OutputDataFile, "0x%02X", holder1);
+          rle_active = false;
         }
-        first_data_of_this_line_written = 1;
-
+        //TODO: check to make sure this works for pixels that are trailing
+        else
+        {
+          fprintf(OutputDataFile, "1,");
+          fprintf(OutputDataFile, "0x%02X", holder1);
+          fprintf(OutputDataFile, "1,");
+          fprintf(OutputDataFile, "0x%02X", holder2);
+        }
+      }
+      else
+      {
+        if (sub_pixel_count)
+        {
+          if (first_data_of_this_line_written)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          first_data_of_this_line_written = 0;
         //Then write out the 16-bit packed pixel to the bin file.
         fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+        }
       }
 #if ONE_DIM
       //That is the end of one line. Complete the C syntax.
@@ -598,6 +685,58 @@ int processImage(Module moduleData, std::string stringPath)
       }
 #endif
     }
+    //write the file at the end of the statement
+    if (0)
+    {
+
+#if ONE_DIM
+      fprintf(OutputDataFile,
+        "\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {",
+        bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
+#else
+      fprintf(OutputDataFile,
+        "\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
+        bitmapInfoHeader.biHeight,
+        (bitmapInfoHeader.biWidth + 0x07) >> 3);
+#endif
+      //loop through the queue to print to the file
+      for (int i = 0; i < bitmapInfoHeader.biHeight; i++)
+      {
+        for (int j = 0; j < bitmapInfoHeader.biWidth; j++)
+        {
+          if (j != 0)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          //fprintf(OutputDataFile, "%d,", &redQueue.pop_front);
+          //fprintf(OutputDataFile, "0x%02X", &redQueue.pop_front);
+        }
+      }
+
+#if ONE_DIM
+      //That is the end of one line. Complete the C syntax.
+      if (row == (bitmapInfoHeader.biHeight - 1))
+      {
+        fprintf(OutputDataFile, "};\n");
+      }
+      else
+      {
+        fprintf(OutputDataFile, ",\n   ");
+      }
+    
+#else
+      //That is the end of one line. Complete the C syntax.
+      if (row == (bitmapInfoHeader.biHeight - 1))
+      {
+        fprintf(OutputDataFile, "}};\n");
+      }
+      else
+      {
+        fprintf(OutputDataFile, "},\n   {");
+      }
+#endif
+    }
+
   }  //  OUTPUT1BPPRED
      //---------------------------------------------------------------------------
   if (moduleData.getYBits() == 1)

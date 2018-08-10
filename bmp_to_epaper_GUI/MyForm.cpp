@@ -82,7 +82,7 @@ System::Void bmptoepaperGUI::MyForm::convertButton_Click(System::Object^  sender
     if (redDrop->Text == "1-bit") {
       redInt = 1;
     }
-    else if (redDrop->Text == "2-bit") {
+    else if (redDrop->Text == "4-bit") {
       redInt = 4;
     }
     else {
@@ -92,7 +92,7 @@ System::Void bmptoepaperGUI::MyForm::convertButton_Click(System::Object^  sender
     if (yelDrop->Text == "1-bit") {
       yelInt = 1;
     }
-    else if (yelDrop->Text == "2-bit") {
+    else if (yelDrop->Text == "4-bit") {
       yelInt = 4;
     }
     else {
@@ -102,8 +102,8 @@ System::Void bmptoepaperGUI::MyForm::convertButton_Click(System::Object^  sender
     if (bwDrop->Text == "1-bit") {
       bwInt = 1;
     }
-    else if (bwDrop->Text == "2-bit") {
-      bwInt = 1;
+    else if (bwDrop->Text == "4-bit") {
+      bwInt = 4;
     }
     else {
       bwInt = 0;
@@ -134,7 +134,6 @@ System::Void bmptoepaperGUI::MyForm::convertButton_Click(System::Object^  sender
 }
 bool bmptoepaperGUI::MyForm::openStuff()
 {
-  bool opened = false;
   openFileDialog1 = gcnew OpenFileDialog;
 
   //openFileDialog1->InitialDirectory = "V:\\_CFA - OTS\\CFAP(ePaper)\\CFAP400300C0 - 0420 = 4.2 BWY\\media\\";
@@ -146,11 +145,12 @@ bool bmptoepaperGUI::MyForm::openStuff()
     bitmap = gcnew Bitmap(openFileDialog1->FileName, true);
     if ((bitmap->FromFile(openFileDialog1->FileName)) != nullptr)
     {
-      opened = true;
       fileName2->Text = openFileDialog1->SafeFileName;
+      bitmapCopy = bitmap;
+      return true;
     }
   }
-  return opened;
+  return false;
 }
 System::Void bmptoepaperGUI::MyForm::bwDrop_TextUpdate(System::Object^  sender, System::EventArgs^  e) {
   

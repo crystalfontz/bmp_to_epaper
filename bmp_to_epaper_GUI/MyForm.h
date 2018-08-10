@@ -24,9 +24,6 @@ namespace bmptoepaperGUI {
     MyForm(void)
     {
       InitializeComponent();
-      //
-      //TODO: Add the constructor code here
-      //
     }
 
   protected:
@@ -76,6 +73,9 @@ namespace bmptoepaperGUI {
            OpenFileDialog^ openFileDialog1;
   private: System::Windows::Forms::TextBox^  textBox1;
            Bitmap^ bitmap;
+  private: System::Windows::Forms::Button^  previewbutton;
+
+           Bitmap^ bitmapCopy;
            bool openStuff();
 
 #pragma region Windows Form Designer generated code
@@ -112,6 +112,7 @@ namespace bmptoepaperGUI {
              this->mainSelectionPanel = (gcnew System::Windows::Forms::Panel());
              this->ePaperSettingsPanel = (gcnew System::Windows::Forms::Panel());
              this->textBox1 = (gcnew System::Windows::Forms::TextBox());
+             this->previewbutton = (gcnew System::Windows::Forms::Button());
              (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
              this->groupBox1->SuspendLayout();
              (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox2))->BeginInit();
@@ -268,7 +269,7 @@ namespace bmptoepaperGUI {
              // bwDrop
              // 
              this->bwDrop->FormattingEnabled = true;
-             this->bwDrop->Items->AddRange(gcnew cli::array< System::Object^  >(3) { L"N/A", L"1-bit", L"2-bit" });
+             this->bwDrop->Items->AddRange(gcnew cli::array< System::Object^  >(3) { L"N/A", L"1-bit", L"4-bit" });
              this->bwDrop->Location = System::Drawing::Point(85, 20);
              this->bwDrop->Name = L"bwDrop";
              this->bwDrop->Size = System::Drawing::Size(67, 21);
@@ -405,11 +406,24 @@ namespace bmptoepaperGUI {
              this->textBox1->TabIndex = 13;
              this->textBox1->Text = L"Bit Resolution:";
              // 
+             // previewbutton
+             // 
+             //TODO: create functional preview button
+             this->previewbutton->Enabled = false;
+             this->previewbutton->Location = System::Drawing::Point(350, 406);
+             this->previewbutton->Name = L"previewbutton";
+             this->previewbutton->Size = System::Drawing::Size(75, 23);
+             this->previewbutton->TabIndex = 32;
+             this->previewbutton->Text = L"Preview";
+             this->previewbutton->UseVisualStyleBackColor = true;
+             this->previewbutton->Visible = false;
+             // 
              // MyForm
              // 
              this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
              this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
              this->ClientSize = System::Drawing::Size(524, 441);
+             this->Controls->Add(this->previewbutton);
              this->Controls->Add(this->ePaperSettingsPanel);
              this->Controls->Add(this->convertButton);
              this->Controls->Add(this->groupBox1);
