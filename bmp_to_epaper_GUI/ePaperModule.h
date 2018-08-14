@@ -3,7 +3,8 @@
 
 #include "stdafx.h"
 #include "CFA_FSO.h"
-class Module
+
+class module_t
 {
 private:
   std::string moduleMaster;

@@ -1,6 +1,6 @@
 #include "ePaperModule.h"
 
-void Module::initializeDisplay(int newrBits, int newyBits, int newbwBits, bool ltrInfo, bool ttbInfo, bool invInfo)
+void module_t::initializeDisplay(int newrBits, int newyBits, int newbwBits, bool ltrInfo, bool ttbInfo, bool invInfo)
 {
   rBits = newrBits;
   yBits = newyBits;
@@ -10,22 +10,22 @@ void Module::initializeDisplay(int newrBits, int newyBits, int newbwBits, bool l
   reverseColor = invInfo;
 }
 
-int Module::getRBits(void)
+int module_t::getRBits(void)
 {
   return rBits;
 }
 
-int Module::getYBits(void)
+int module_t::getYBits(void)
 {
   return yBits;
 }
 
-int Module::getBWBits(void)
+int module_t::getBWBits(void)
 {
   return bwBits;
 }
 
-bool Module::getLTR(void)
+bool module_t::getLTR(void)
 {
   if (leftToRight) {
     return true;
@@ -35,12 +35,12 @@ bool Module::getLTR(void)
   }
 }
 
-bool Module::getTTB(void)
+bool module_t::getTTB(void)
 {
   return topToBot;
 }
 
-bool Module::getInverted(void)
+bool module_t::getInverted(void)
 {
   return reverseColor;
 }

@@ -121,10 +121,10 @@ System::Void bmptoepaperGUI::MyForm::convertButton_Click(System::Object^  sender
       invBool = true;
     }
 
-    Module ePaperModule;
+    module_t ePaperModule;
     ePaperModule.initializeDisplay(redInt, yelInt, bwInt, LTRBool, TTBBool, invBool);
     std::string pathLocation = msclr::interop::marshal_as<std::string>(openFileDialog1->FileName);
-    processImage(ePaperModule, pathLocation);
+    processImage(rleBox->Checked, !(ArraySizeChkBox->Checked), ePaperModule, pathLocation);
     CString action = "open";
     ShellExecute(NULL, action, (CString)getOutputFile(pathLocation.c_str()).c_str(), NULL, NULL, SW_SHOW);
     std::string message = "File saved to:\n" + pathLocation;

@@ -74,6 +74,8 @@ namespace bmptoepaperGUI {
   private: System::Windows::Forms::TextBox^  textBox1;
            Bitmap^ bitmap;
   private: System::Windows::Forms::Button^  previewbutton;
+  private: System::Windows::Forms::CheckBox^  rleBox;
+  private: System::Windows::Forms::CheckBox^  ArraySizeChkBox;
 
            Bitmap^ bitmapCopy;
            bool openStuff();
@@ -110,9 +112,11 @@ namespace bmptoepaperGUI {
              this->BTTButton = (gcnew System::Windows::Forms::RadioButton());
              this->TTBButton = (gcnew System::Windows::Forms::RadioButton());
              this->mainSelectionPanel = (gcnew System::Windows::Forms::Panel());
+             this->rleBox = (gcnew System::Windows::Forms::CheckBox());
              this->ePaperSettingsPanel = (gcnew System::Windows::Forms::Panel());
              this->textBox1 = (gcnew System::Windows::Forms::TextBox());
              this->previewbutton = (gcnew System::Windows::Forms::Button());
+             this->ArraySizeChkBox = (gcnew System::Windows::Forms::CheckBox());
              (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
              this->groupBox1->SuspendLayout();
              (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox2))->BeginInit();
@@ -369,6 +373,8 @@ namespace bmptoepaperGUI {
              // 
              // mainSelectionPanel
              // 
+             this->mainSelectionPanel->Controls->Add(this->ArraySizeChkBox);
+             this->mainSelectionPanel->Controls->Add(this->rleBox);
              this->mainSelectionPanel->Controls->Add(this->panel2);
              this->mainSelectionPanel->Controls->Add(this->panel1);
              this->mainSelectionPanel->Controls->Add(this->pictureBox3);
@@ -377,9 +383,20 @@ namespace bmptoepaperGUI {
              this->mainSelectionPanel->Controls->Add(this->InvertedCBox);
              this->mainSelectionPanel->Location = System::Drawing::Point(12, 148);
              this->mainSelectionPanel->Name = L"mainSelectionPanel";
-             this->mainSelectionPanel->Size = System::Drawing::Size(198, 155);
+             this->mainSelectionPanel->Size = System::Drawing::Size(199, 155);
              this->mainSelectionPanel->TabIndex = 30;
              this->mainSelectionPanel->Visible = false;
+             // 
+             // rleBox
+             // 
+             this->rleBox->AutoSize = true;
+             this->rleBox->Location = System::Drawing::Point(121, 51);
+             this->rleBox->Name = L"rleBox";
+             this->rleBox->Size = System::Drawing::Size(47, 17);
+             this->rleBox->TabIndex = 30;
+             this->rleBox->Text = L"RLE";
+             this->rleBox->TextAlign = System::Drawing::ContentAlignment::MiddleRight;
+             this->rleBox->UseVisualStyleBackColor = true;
              // 
              // ePaperSettingsPanel
              // 
@@ -408,7 +425,6 @@ namespace bmptoepaperGUI {
              // 
              // previewbutton
              // 
-             //TODO: create functional preview button
              this->previewbutton->Enabled = false;
              this->previewbutton->Location = System::Drawing::Point(350, 406);
              this->previewbutton->Name = L"previewbutton";
@@ -417,6 +433,17 @@ namespace bmptoepaperGUI {
              this->previewbutton->Text = L"Preview";
              this->previewbutton->UseVisualStyleBackColor = true;
              this->previewbutton->Visible = false;
+             // 
+             // ArraySizeChkBox
+             // 
+             this->ArraySizeChkBox->AutoSize = true;
+             this->ArraySizeChkBox->Location = System::Drawing::Point(121, 70);
+             this->ArraySizeChkBox->Name = L"ArraySizeChkBox";
+             this->ArraySizeChkBox->Size = System::Drawing::Size(80, 17);
+             this->ArraySizeChkBox->TabIndex = 31;
+             this->ArraySizeChkBox->Text = L"2 Dim Array";
+             this->ArraySizeChkBox->TextAlign = System::Drawing::ContentAlignment::MiddleRight;
+             this->ArraySizeChkBox->UseVisualStyleBackColor = true;
              // 
              // MyForm
              // 
