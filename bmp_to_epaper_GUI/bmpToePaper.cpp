@@ -2,11 +2,9 @@
 //
 //  CRYSTALFONTZ ePaper 24-bit BMP file to data structure conversion code
 //
-//  Visual Studio 2010
+//  Visual Studio 2017
 //
 //  ref: https://www.crystalfontz.com/
-//
-//  2018 - 12 - 28 Trevin Jorgenson
 //
 //=============================================================================
 //This is free and unencumbered software released into the public domain.
