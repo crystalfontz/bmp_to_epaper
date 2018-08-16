@@ -29,8 +29,8 @@ void Module::setModuleType(std::string enteredModule)
     if (enteredModule == "CFAP104212C00213")
     {
       gBits = 1;
-      cBits = 1;
-      colorType = 1;
+      rBits = 1;
+      yBits = 0;
 
       modWidth = 104;
       modLength = 212;
@@ -40,8 +40,8 @@ void Module::setModuleType(std::string enteredModule)
   else if (enteredModule == "CFAP122250A00213")
   {
     gBits = 1;
-    cBits = 0;
-    colorType = 0;
+    rBits = 0;
+    yBits = 0;
 
     modWidth = 122;
     modLength = 250;
@@ -50,9 +50,9 @@ void Module::setModuleType(std::string enteredModule)
   }
     else if (enteredModule == "CFAP128296A00290")
     {
-      gBits = 2;
-      cBits = 0;
-      colorType = 0;
+      gBits = 1;
+      rBits = 0;
+      yBits = 0;
 
       modWidth = 128;
       modLength = 296;
@@ -62,8 +62,8 @@ void Module::setModuleType(std::string enteredModule)
   else if (enteredModule == "CFAP128296C00290")
   {
     gBits = 1;
-    cBits = 0;
-    colorType = 0;
+    rBits = 0;
+    yBits = 0;
 
     modWidth = 128;
     modLength = 296;
@@ -73,8 +73,8 @@ void Module::setModuleType(std::string enteredModule)
   else if (enteredModule == "CFAP128296D00290")
   {
     gBits = 1;
-    cBits = 1;
-    colorType = 1;
+    rBits = 1;
+    yBits = 0;
 
     modWidth = 128;
     modLength = 296;
@@ -84,8 +84,8 @@ void Module::setModuleType(std::string enteredModule)
   else if (enteredModule == "CFAP128296E00290")
   {
     gBits = 1;
-    cBits = 1;
-    colorType = 2;
+    rBits = 0;
+    yBits = 1;
 
     modWidth = 128;
     modLength = 296;
@@ -95,8 +95,8 @@ void Module::setModuleType(std::string enteredModule)
   else if (enteredModule == "CFAP152152A00154")
   {
     gBits = 1;
-    cBits = 1;
-    colorType = 1;
+    rBits = 1;
+    yBits = 0;
 
     modWidth = 152;
     modLength = 152;
@@ -106,8 +106,8 @@ void Module::setModuleType(std::string enteredModule)
   else if (enteredModule == "CFAP176264A00270")
   {
     gBits = 1;
-    cBits = 1;
-    colorType = 1;
+    rBits = 1;
+    yBits = 0;
 
     modWidth = 176;
     modLength = 264;
@@ -117,8 +117,8 @@ void Module::setModuleType(std::string enteredModule)
   else if (enteredModule == "CFAP176264B00270")
   {
     gBits = 1;
-    cBits = 0;
-    colorType = 0;
+    rBits = 0;
+    yBits = 0;
 
     modWidth = 176;
     modLength = 264;
@@ -128,30 +128,63 @@ void Module::setModuleType(std::string enteredModule)
   else if (enteredModule == "CFAP200200A00154")
   {
     gBits = 1;
-    cBits = 0;
-    colorType = 0;
+    rBits = 0;
+    yBits = 0;
 
     modWidth = 122;
     modLength = 250;
     reverseColor = false;
     leftToRight = false;
   }
-  else if (enteredModule == "CFAP400300C00420")
+  else if (enteredModule == "CFAP400300A00420")
   {
     gBits = 1;
-    cBits = 1;
-    colorType = 2;
+    rBits = 1;
+    yBits = 0;
 
     modWidth = 400;
     modLength = 300;
     reverseColor = false;
     leftToRight = true;
   }
+  else if (enteredModule == "CFAP400300B00420")
+  {
+    gBits = 1;
+    rBits = 0;
+    yBits = 0;
+
+    modWidth = 400;
+    modLength = 300;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP400300C00420")
+  {
+    gBits = 1;
+    rBits = 0;
+    yBits = 1;
+
+    modWidth = 400;
+    modLength = 300;
+    reverseColor = false;
+    leftToRight = true;
+  }
+  else if (enteredModule == "CFAP600448A00750")
+  {
+    gBits = 1;
+    rBits = 0;
+    yBits = 0;
+
+    modWidth = 640;
+    modLength = 384;
+    reverseColor = false;
+    leftToRight = true;
+  }
   else if (enteredModule == "CFAP640384A00750")
   {
     gBits = 1;
-    cBits = 0;
-    colorType = 0;
+    rBits = 0;
+    yBits = 0;
 
     modWidth = 640;
     modLength = 384;
@@ -214,46 +247,41 @@ int Module::getLength()
 	}
 }
 
+int Module::getRBits(void)
+{
+  if (rBits != NULL)
+  {
+    return rBits;
+  }
+  else {
+    //printf("no red bit value stored");
+    return 0;
+  }
+}
+
+int Module::getYBits(void)
+{
+  if (yBits != NULL)
+  {
+    return yBits;
+  }
+  else {
+    //printf("no yellow bit value stored");
+    return 0;
+  }
+}
+
 int Module::getGBits()
 {
 	if (gBits != NULL)
 	{
 		return gBits;
 	}
-	else { printf("no grey bit value stored");
+	else { 
+    //printf("no grey bit value stored");
 	return 0;
 	}
 }
-
-int Module::getCBits()
-{
-	if (cBits != NULL)
-	{
-		return cBits;
-	}
-	else
-	{
-		printf("no color bit value stored");
-		return 0;
-	}
-}
-
-int Module::getColor()
-{
-  if (colorType == 0)
-  {
-    return 0;
-  }
-  if (colorType == 1)
-  {
-    return 1;
-  }
-  if (colorType == 2)
-  {
-    return 2;
-  }
-}
-
 
 bool Module::getLTR(void)
 {
