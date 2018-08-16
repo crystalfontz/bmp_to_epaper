@@ -27,12 +27,7 @@ int module_t::getBWBits(void)
 
 bool module_t::getLTR(void)
 {
-  if (leftToRight) {
-    return true;
-  }
-  else {
-    return false;
-  }
+  return leftToRight;
 }
 
 bool module_t::getTTB(void)

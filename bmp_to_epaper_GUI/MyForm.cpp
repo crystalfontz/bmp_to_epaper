@@ -127,8 +127,8 @@ System::Void bmptoepaperGUI::MyForm::convertButton_Click(System::Object^  sender
     processImage(rleBox->Checked, !(ArraySizeChkBox->Checked), ePaperModule, pathLocation);
     CString action = "open";
     ShellExecute(NULL, action, (CString)getOutputFile(pathLocation.c_str()).c_str(), NULL, NULL, SW_SHOW);
-    std::string message = "File saved to:\n" + getOutputFile(pathLocation.c_str());
-    MessageBox::Show(gcnew String(message.c_str()), "File Saved");
+    //std::string message = "File saved to:\n" + getOutputFile(pathLocation.c_str());
+    //MessageBox::Show(gcnew String(message.c_str()), "File Saved");
 
   }
 }

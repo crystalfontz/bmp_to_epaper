@@ -146,8 +146,11 @@ unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
   //move file point to the begining of bitmap data
   fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
 
+  int imageSize = bitmapInfoHeader->biHeight*bitmapInfoHeader->biWidth * 3;
+
   //allocate enough memory for the bitmap image data
-  bitmapImage = (unsigned char*)malloc(bitmapInfoHeader->biSizeImage);
+  bitmapImage = (unsigned char*)malloc(imageSize);
+
 
   //verify memory allocation
   if (NULL == bitmapImage)
@@ -158,10 +161,19 @@ unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
 
   //read in the bitmap image data
   bytes_read_from_bitmap =
-    fread(bitmapImage, 1, bitmapInfoHeader->biSizeImage, filePtr);
+    fread(bitmapImage, 1, imageSize, filePtr);
 
   //make sure bitmap image data was read
-  if (bytes_read_from_bitmap != bitmapInfoHeader->biSizeImage)
+  if (bytes_read_from_bitmap != imageSize)
+  {
+    free(bitmapImage);
+    fclose(filePtr);
+    return(NULL);
+  }
+
+  //We are only set up to do 24 bit BMPs, which are
+  //more or less standard.
+  if (bitmapInfoHeader->biBitCount != 24)
   {
     free(bitmapImage);
     fclose(filePtr);
@@ -210,18 +222,6 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
   printf("biHeight = %d\n", bitmapInfoHeader.biHeight);
   printf("biBitCount = %d\n", bitmapInfoHeader.biBitCount);
 
-
-
-  //We are only set up to do 24 bit BMPs, which are
-  //more or less standard.
-  if (24 != bitmapInfoHeader.biBitCount)
-  {
-    printf("This  program  can  only  process  24  bit  BMPs, the  input  BMP  is  %d\n",
-      bitmapInfoHeader.biBitCount);
-    //free  the  memory  allocated  by  LoadBitmapFile
-    free(bitmapData);
-    return(1);
-  }
 
   errno_t
     file_open_err;
@@ -894,7 +894,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
           sub_pixel_1bit;
 
         //Check to see if it's a red pixel
-        if ((171 < red) && (green < 110) && (blue < 110))
+        if ((155 < red) && (green < 110) && (blue < 110))
         {
           //red, put the ink
           if (!moduleData.getInverted())
