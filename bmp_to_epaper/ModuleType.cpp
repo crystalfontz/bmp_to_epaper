@@ -12,16 +12,18 @@
 //============================================================================
 //Information on the following block of code:
 //gBits sets the number of bits the ePaper uses for black and white
-//cBits sets the number of bits the ePaper uses for color;
-//colorType
-//  0: Mono
-//  1: Red
-//  2: Yellow
+//rBits sets the number of bits the ePaper uses for red
+//yBits sets the number of bits the ePaper uses for yellow
 //
 //modWidth sets the width of the dispaly
 //modLength sets the length of the display
-//reverseColor sets which polarity the bits are stored in the bitmap
-//leftToRight true if the screen is set to update left to right, false if vice versa
+//reverseColor sets which polarity the bits are stored in the bitmap 
+//  - this can be changed if inverted colors are desired.
+//
+//leftToRight true if the screen is set to update left to right, false if vice versa 
+//  - this can be changed if one wants to mirror the image. Most displays also have
+//    a setting that can be changed for the same effect
+
 void Module::setModuleType(std::string enteredModule)
 {
 	bool found = false;
@@ -131,8 +133,8 @@ void Module::setModuleType(std::string enteredModule)
     rBits = 0;
     yBits = 0;
 
-    modWidth = 122;
-    modLength = 250;
+    modWidth = 200;
+    modLength = 200;
     reverseColor = false;
     leftToRight = false;
   }
@@ -175,8 +177,8 @@ void Module::setModuleType(std::string enteredModule)
     rBits = 0;
     yBits = 0;
 
-    modWidth = 640;
-    modLength = 384;
+    modWidth = 600;
+    modLength = 448;
     reverseColor = false;
     leftToRight = true;
   }
@@ -254,7 +256,7 @@ int Module::getRBits(void)
     return rBits;
   }
   else {
-    //printf("no red bit value stored");
+    printf("no red bit value stored for this display");
     return 0;
   }
 }
@@ -266,7 +268,7 @@ int Module::getYBits(void)
     return yBits;
   }
   else {
-    //printf("no yellow bit value stored");
+    printf("no yellow bit value stored for this display");
     return 0;
   }
 }
@@ -278,7 +280,7 @@ int Module::getGBits()
 		return gBits;
 	}
 	else { 
-    //printf("no grey bit value stored");
+  printf("no grey bit value stored for this display");
 	return 0;
 	}
 }

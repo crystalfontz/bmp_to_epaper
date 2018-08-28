@@ -6,7 +6,6 @@
 //
 //  ref: https://www.crystalfontz.com/
 //
-//  2018 - 12 - 28 Trevin Jorgenson
 //
 //=============================================================================
 //This is free and unencumbered software released into the public domain.
