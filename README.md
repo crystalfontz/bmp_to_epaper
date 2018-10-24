@@ -6,7 +6,11 @@ https://www.crystalfontz.com/c/epaper-displays/519
 Code generated in Visual Studio 2017 and all code supplied in the respective folders. Currently, only "*.bmp" files are accepted by the software.
 
 ## Command Line
-Pass a .bmp file as the first argument and the CFA part number as the second argument to the executable.
+2 options. The first option requires a specific size of bitmap while the second option does not:
+1. Pass a .bmp file as the first argument and the CFA part number as the second argument to the executable.
+2. Pass a .bmp file as the first argument, the number of grey bits as the second (0, 1, or 2), red bits as the third (0 or 1), and yellow bits as the fourth (0 or 1). 
+
+
 A .h file will be generated and saved in the same folder as the .bmp file. The header file can be used to generate an image on an ePaper display using the demo code supplied by Crystalfontz. Simple copy the new code and replace the existing code in any one of the "..._Images.h" files in the sample code.
 
 ## GUI
