@@ -26,7 +26,7 @@
 
 void Module::setModuleType(std::string enteredModule)
 {
-	bool found = false;
+	//bool found = false;
     moduleMaster = enteredModule;
     if (enteredModule == "CFAP104212C00213")
     {
@@ -222,6 +222,28 @@ void Module::setModuleType(std::string enteredModule)
 	}
 }
 
+void Module::setModuleType(int g, int r, int y)
+{
+  moduleMaster = "N/A";
+  gBits = g;
+  rBits = r;
+  yBits = y;
+
+  reverseColor = false;
+  leftToRight = true;
+}
+
+void Module::setWidth(int w)
+{
+  modWidth = w;
+}
+
+void Module::setLength(int l)
+{
+ 
+modLength = l;
+}
+
 int Module::getWidth()
 {
 	if (modWidth != NULL)
@@ -290,7 +312,12 @@ bool Module::getLTR(void)
 	return leftToRight;
 
 }
+bool Module::getTTB(void)
+{
+  return TopToBottom;
+}
 bool Module::getReverseColor(void)
 {
 	return reverseColor;
 }
+

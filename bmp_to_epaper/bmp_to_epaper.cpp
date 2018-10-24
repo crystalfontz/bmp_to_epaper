@@ -46,9 +46,9 @@
 //Configuration Properties, Genera, Use of ATL -> Static Link to ATL
 //
 //=============================================================================
-#include "stdafx.h"
-#include "windows.h"
-#include "ModuleType.h"
+
+#include <sstream>
+#include "bmp_to_epaper.h"
 
 
 //Set to 1 for a one dimensional array. Set to 0 for the more conventional
@@ -88,6 +88,8 @@ Module enteredModule;
 //  }BITMAPINFOHEADER;
 //
 //===========================================================================
+
+//TODO: remove this function and replace with FSO
 std::string getOutputFile(const char *path)
 {
 	std::string
@@ -109,6 +111,29 @@ std::string getOutputFile(const char *path)
 	myPath += ".h";
 
 	return myPath;
+}
+
+std::string getBmpFile(const char *path)
+{
+  std::string
+    myPath;
+  char
+    drive[_MAX_DRIVE];
+  char
+    dir[_MAX_DIR];
+  char
+    fname[_MAX_FNAME];
+  char
+    ext[_MAX_EXT];
+
+  _splitpath_s(path, drive, dir, fname, ext);
+
+  myPath = drive;
+  myPath += dir;
+  myPath += fname;
+  myPath += ext;
+
+  return myPath;
 }
 
 unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
@@ -200,581 +225,1388 @@ void usage(char *our_name)
 //===========================================================================
 int main(int argc, char*  argv[])
 {
-	//argv[0] = program location
-	//argv[1] = bmp
-	//argv[2] = CFA ePaper PN
+  //argv[0] = program location
+  //argv[1] = bmp
+  //argv[2] = CFA ePaper PN
+  //
+  //OR
+  //
+  //argv[0] = program location
+  //argv[1] = bmp
+  //argv[2] = grey
+  //argv[3] = red
+  //argv[4] = yellow
 
-	BITMAPINFOHEADER
-		bitmapInfoHeader;
-	unsigned char
-		*bitmapData;
+  FILE_SYSTEM_OBJECT myPath;
 
+  BITMAPINFOHEADER
+    bitmapInfoHeader;
+  unsigned char
+    *bitmapData;
+  std::string fullPath = argv[0];
+  fullPath.append(argv[1]);
 
-	//Must have 3 parameters including path
-	if (3 != argc)
-	{
-		usage(argv[0]);
-		printf("Incorrect number of arguments entered");
-		return(1);
-	}
-
-
-	//set the parameters of the module for the entered CFA PN
-	enteredModule.setModuleType(argv[2]);
-	//enteredModule.setModuleType("Wrong");
-	
-	char *sourceFile = argv[1];
-	std::string outputFile = getOutputFile(argv[1]);
-
-	printf("Reading input bitmap: %s\n", argv[1]);
-	//Crack open the BMP, and read the image data
-	bitmapData = LoadBitmapFile(argv[1], &bitmapInfoHeader);
-
-	//Check that the operation went OK.
-	if (NULL == bitmapData)
-	{
-		printf("Error reading/processing the BMP.\n");
-		system("pause");
-		usage(argv[0]);
-		return(1);
-	}
-
-	printf("biWidth = %d\n", bitmapInfoHeader.biWidth);
-	printf("biHeight = %d\n", bitmapInfoHeader.biHeight);
-	printf("biBitCount = %d\n", bitmapInfoHeader.biBitCount);
-
-	//check to make sure the pixel width of the image matches the screen width
-	if (enteredModule.getWidth() != bitmapInfoHeader.biWidth)
-	{
-		printf("Pixel width of %d is not allowed for this module, image must be %d pixels wide.",bitmapInfoHeader.biWidth,enteredModule.getWidth());
-		while (1);
-	}
-
-	//check to make sure the pixel height of the image matches the screen height
-	if (enteredModule.getLength() != bitmapInfoHeader.biHeight)
-	{
-		printf("Height of %d pixels is not allowed for this module, image must be %d pixels in height.", bitmapInfoHeader.biHeight, enteredModule.getLength());
-		while (1);
-	}
-
-
-	//We are only set up to do 24 bit BMPs, which are
-	//more or less standard.
-	if (24 != bitmapInfoHeader.biBitCount)
-	{
-		printf("This  program  can  only  process  24  bit  BMPs, the  input  BMP  is  %d\n",
-			bitmapInfoHeader.biBitCount);
-		usage(argv[0]);
-		//free  the  memory  allocated  by  LoadBitmapFile
-		free(bitmapData);
-		return(1);
-	}
-
-	errno_t
-		file_open_err;
-	FILE
-		*Grey_2bit_and_Red_1bit_out;
-
-	file_open_err = fopen_s(&Grey_2bit_and_Red_1bit_out, outputFile.c_str(), "wt");
-	if (file_open_err)
-	{
-		printf("Error# %d: %s opening the 2bpp grey + 1bpp red output file: \"%s\"\n", file_open_err, strerror(file_open_err), outputFile.c_str());
-		usage(argv[0]);
-		//free the memory allocated by LoadBitmapFile
-		free(bitmapData);
-		//Indcicate failure, exit
-		return(NULL);
-	}
-	printf("Opened \"%s\" as the 2bpp grey + 1bpp red output file.\n", outputFile.c_str());
-
-	//The output file is open. Write out the header information to the grey file.
-
-	fprintf(Grey_2bit_and_Red_1bit_out, "//Source image file: \"%s\"\n", argv[1]);
-	fprintf(Grey_2bit_and_Red_1bit_out, "#define HEIGHT_PIXELS    (%d)\n", bitmapInfoHeader.biHeight);
-	fprintf(Grey_2bit_and_Red_1bit_out, "#define WIDTH_PIXELS     (%d)\n", bitmapInfoHeader.biWidth);
-if(enteredModule.getGBits() == 2)
-	fprintf(Grey_2bit_and_Red_1bit_out, "#define WIDTH_GREY_BYTES (%d)\n", (bitmapInfoHeader.biWidth + 0x03) >> 2);
-
-if(enteredModule.getRBits() == 1)
-	fprintf(Grey_2bit_and_Red_1bit_out, "#define WIDTH_RED_BYTES  (%d)\n", (bitmapInfoHeader.biWidth + 0x07) >> 3);
-
-if (enteredModule.getRBits() == 1)
-fprintf(Grey_2bit_and_Red_1bit_out, "#define WIDTH_RED_BYTES  (%d)\n", (bitmapInfoHeader.biWidth + 0x07) >> 3);
+  //Check to see what the inputs are. Must be 3 or 5.
+  if (3 == argc)
+  {
+    //set the parameters of the module for the entered CFA PN
+    enteredModule.setModuleType(argv[2]);
+  }
+  else if (5 == argc)
+  {
+    std::istringstream ssg(argv[2]);
+    int grey;
+    if (!(ssg >> grey))
+    {
+      //bad things
+    }
+    std::istringstream ssr(argv[3]);
+    int red;
+    if (!(ssr >> red))
+    {
+      //bad things
+    }
+    std::istringstream ssy(argv[4]);
+    int yellow;
+    if (!(ssy >> yellow))
+    {
+      //bad things
+    }
+    enteredModule.setModuleType(grey, red, yellow);
+  }
+  else
+  {
+    usage(argv[0]);
+    printf("Incorrect number of arguments entered");
+    return(1);
+  }
 
 
-if(enteredModule.getGBits() == 1)
-	fprintf(Grey_2bit_and_Red_1bit_out, "#define WIDTH_MONO_BYTES (%d)\n", (bitmapInfoHeader.biWidth + 0x07) >> 3);
+  char *sourceFile = argv[1];
+  std::string outputFile = getOutputFile(argv[1]);
+  myPath.setFullFile(argv[0]);
 
-	//Now we just loop down the file, line by line (bottom first),
-	//create the 16-bit words and spool them out.
-	int
-		col;
-	int
-		row;
+  printf("Reading input bitmap: %s\n", argv[1]);
+  //Crack open the BMP, and read the image data
+  bitmapData = LoadBitmapFile(argv[1], &bitmapInfoHeader);
 
-	//Our pointer into the bitmap data
-	unsigned char
-		*data_pointer;
+  //Check that the operation went OK.
+  if (NULL == bitmapData)
+  {
+    printf("Error reading/processing the BMP.\n");
+    system("pause");
+    usage(argv[0]);
+    return(1);
+  }
+  if (5 == argc)
+  {
+    enteredModule.setWidth(bitmapInfoHeader.biWidth);
+    enteredModule.setLength(bitmapInfoHeader.biHeight);
+  }
 
-	//The width of a line, in bytes, bust be a multiple of 4;
-	int
-		line_width;
+  printf("biWidth = %d\n", bitmapInfoHeader.biWidth);
+  printf("biHeight = %d\n", bitmapInfoHeader.biHeight);
+  printf("biBitCount = %d\n", bitmapInfoHeader.biBitCount);
 
-	//3 bytes per pixel, round up to next 4-byte alignment
-	line_width = ((3 * bitmapInfoHeader.biWidth) + 3) & ~0x03;
+  //check to make sure the pixel width of the image matches the screen width
+  if (enteredModule.getWidth() != bitmapInfoHeader.biWidth)
+  {
+    printf("Pixel width of %d is not allowed for this module, image must be %d pixels wide.", bitmapInfoHeader.biWidth, enteredModule.getWidth());
+    while (1);
+  }
 
-	//---------------------------------------------------------------------------
-	if (enteredModule.getGBits() == 2)
-	{
+  //check to make sure the pixel height of the image matches the screen height
+  if (enteredModule.getLength() != bitmapInfoHeader.biHeight)
+  {
+    printf("Height of %d pixels is not allowed for this module, image must be %d pixels in height.", bitmapInfoHeader.biHeight, enteredModule.getLength());
+    while (1);
+  }
 
-#if ONE_DIM
-		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst uint8_t Grey_2BPP[%d] PROGMEM = \n  {",
-			bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x03) >> 2));
-#else
-		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst uint8_t Grey_2BPP[%d][%d] PROGMEM =\n  {{",
-			bitmapInfoHeader.biHeight,
-			(bitmapInfoHeader.biWidth + 0x03) >> 2);
-#endif
 
-		for (row = 0; row < bitmapInfoHeader.biHeight; row++)
-		{
-			int
-				first_data_of_this_line_written;
-			first_data_of_this_line_written = 0;
+  //We are only set up to do 24 bit BMPs, which are
+  //more or less standard.
+  if (24 != bitmapInfoHeader.biBitCount)
+  {
+    printf("This  program  can  only  process  24  bit  BMPs, the  input  BMP  is  %d\n",
+      bitmapInfoHeader.biBitCount);
+    usage(argv[0]);
+    //free  the  memory  allocated  by  LoadBitmapFile
+    free(bitmapData);
+    return(1);
+  }
 
-			//Point to the current row in the bitmap data (starting at the bottom)
-			data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+  //TODO: the following is just patch work. This should all be taken from a shared file with the GUI
+  bool rlEncoded = false;
+  Module moduleData = enteredModule;
+  bool oneDimArray = true;
+  FILE_SYSTEM_OBJECT bmpPath;
+  std::string pathName = getBmpFile(argv[1]);
 
-			//We need to push 4 pixels into one 8-bit byte.
-			unsigned char
-				this_2bpp_byte;
-			int
-				sub_pixel_count;
 
-			this_2bpp_byte = 0x00;
-			sub_pixel_count = 0;
+  errno_t
+    file_open_err;
+  FILE
+    *OutputDataFile;
 
-			//work across the row.
-			for (col = 0; col < bitmapInfoHeader.biWidth; col++)
-			{
-				unsigned char
-					red;
-				unsigned char
-					green;
-				unsigned char
-					blue;
-				//pull the pixel out of the stream
-				blue = *data_pointer++;
-				green = *data_pointer++;
-				red = *data_pointer++;
+  file_open_err = fopen_s(&OutputDataFile, outputFile.c_str(), "wt");
+  if (file_open_err)
+  {
+    printf("Error# %d: %s opening the OutputDataFile file: \"%s\"\n", file_open_err, strerror(file_open_err), outputFile.c_str());
+    //free the memory allocated by LoadBitmapFile
+    free(bitmapData);
+    //Indcicate failure, exit
+    return(NULL);
+  }
+  printf("Opened \"%s\" as the 2bpp grey + 1bpp red output file.\n", outputFile.c_str());
 
-				//Now decide what color of the ink we are
-				//going to use for this pixel.
-				unsigned char
-					sub_pixel_2bit;
+  //The output file is open. Write out the header information to the grey file.
+  fprintf(OutputDataFile,
+    "/* \n"
+    " * Generated using \"BMP TO EPAPER\" by Crystalfontz of America\n"
+    " * \n"
+    " * The program can be found on our website at : \n"
+    " *     https://www.crystalfontz.com/product/bmptoepaper-bitmap-to-epaper-software \n"
+    " * \n"
+    " * Or, the code can be forked from GitHub : \n"
+    " *     https://github.com/crystalfontz/bmp_to_epaper \n"
+    " * \n"
+    " * RLE Image: %s\n"
+    " * Non-Inverted Image: %s\n"
+    " * One Dimensional Array: %s\n"
+    " */\n\n",
+    (rlEncoded ? "true" : "false"),
+    (moduleData.getReverseColor() ? "true" : "false"),
+    (oneDimArray ? "true" : "false")
+  );
 
-				//Check for the special case of it being a red pixel
-				if ((171 < red) && (green < 85) && (blue < 85))
-				{
-					//since we are writing the black/grey/white plane, we
-					//want to put white wherre this red pixel would fall.
-					sub_pixel_2bit = 0x00;  // 00 = White
-				}
-				else
-				{
-					//See if it is a white pixel
-					if ((171 < red) && (171 < green) && (171 < blue))
-					{
-						sub_pixel_2bit = 0x00;  // 00 = White
-					}
-					else
-					{
-						//See if it is a 50% gray pixel
-						if ((85 < red) && (red < 171) &&
-							(85 < green) && (green < 171) &&
-							(85 < blue) && (blue < 171))
-						{
-							sub_pixel_2bit = 0x01;  // 01 or 10 = Grey 
-						}
-						else
-						{
-							//default to black
-							sub_pixel_2bit = 0x03;  //11 = black
-						}
-					}
-				}
+  //fprintf(OutputDataFile, "//Source image file: \"%s\"\n", pathName);
+  fprintf(OutputDataFile, "#define HEIGHT_PIXELS    (%d)\n", bitmapInfoHeader.biHeight);
+  fprintf(OutputDataFile, "#define WIDTH_PIXELS     (%d)\n", bitmapInfoHeader.biWidth);
 
-				//Insert those bits into the correct slot of this_2bpp_byte
-				this_2bpp_byte |= (sub_pixel_2bit) << ((3 - sub_pixel_count) * 2);
+  if (moduleData.getGBits() == 2)
+    fprintf(OutputDataFile, "#define WIDTH_GREY_BYTES (%d)\n", (bitmapInfoHeader.biWidth + 0x03) >> 2);
 
-				//Move to the next sub-pixel
-				sub_pixel_count++;
-				//If this byte is full, write it out and clear for the 
-				//next 4 bytes.
-				if (3 < sub_pixel_count)
-				{
-					if (first_data_of_this_line_written)
-					{
-						fprintf(Grey_2bit_and_Red_1bit_out, ",");
-					}
-					first_data_of_this_line_written = 1;
-					//Then write out the 8-bit packed pixel
-					fprintf(Grey_2bit_and_Red_1bit_out, "0x%02X", this_2bpp_byte);
-					//Reset the byte accumulator and count
-					this_2bpp_byte = 0;
-					sub_pixel_count = 0;
-				}
-			}
-			//This is the last entry for this line. If we have not just written
-			//out the last byte, of this line write it out now.
-			if (sub_pixel_count)
-			{
-				if (first_data_of_this_line_written)
-				{
-					fprintf(Grey_2bit_and_Red_1bit_out, ",");
-				}
-				first_data_of_this_line_written = 1;
-				//Then write out the 8bit packed pixel.
-				fprintf(Grey_2bit_and_Red_1bit_out, "0x%02X", this_2bpp_byte);
-			}
+  if (moduleData.getGBits() == 1)
+    fprintf(OutputDataFile, "#define WIDTH_MONO_BYTES (%d)\n", (bitmapInfoHeader.biWidth + 0x07) >> 3);
 
-#if ONE_DIM
-			//That is the end of one line. Complete the C syntax.
-			if (row == (bitmapInfoHeader.biHeight - 1))
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "};\n");
-			}
-			else
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, ",\n   ");
-			}
-#else
-			//That is the end of one line. Complete the C syntax.
-			if (row == (bitmapInfoHeader.biHeight - 1))
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "}};\n");
-			}
-			else
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "},\n   {");
-			}
-#endif
-		}
-	}//  OUTPUT2BPPGREY
-	//---------------------------------------------------------------------------
-	if (enteredModule.getRBits() == 1 || enteredModule.getYBits() == 1)
-	{
-		//The 2-bit grey is done, now dump out the 1-bit red
-		//Write out the header information to the red file.
-#if ONE_DIM
-		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {",
-			bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
-#else
-		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
-			bitmapInfoHeader.biHeight,
-			(bitmapInfoHeader.biWidth + 0x07) >> 3);
-#endif
-		//Now we just loop down the file, line by line (bottom first),
-		for (row = 0; row < bitmapInfoHeader.biHeight; row++)
-		{
-			int
-				first_data_of_this_line_written;
-			first_data_of_this_line_written = 0;
+  if (moduleData.getRBits() == 1)
+    fprintf(OutputDataFile, "#define WIDTH_RED_BYTES  (%d)\n", (bitmapInfoHeader.biWidth + 0x07) >> 3);
 
-			//Point to the current row in the bitmap data (starting at the bottom)
-			data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+  if (moduleData.getYBits() == 1)
+    fprintf(OutputDataFile, "#define WIDTH_YELLOW_BYTES  (%d)\n", (bitmapInfoHeader.biWidth + 0x07) >> 3);
 
-			//We need to push 8 pixels into one 8-bit byte.
-			unsigned char
-				this_1bpp_byte;
-			int
-				sub_pixel_count;
+  //Now we just loop down the file, line by line (bottom first),
+  //create the 16-bit words and spool them out.
+  int
+    col;
+  int
+    row;
 
-			this_1bpp_byte = 0x00;
-			sub_pixel_count = 0;
+  //Our pointer into the bitmap data
+  unsigned char
+    *data_pointer;
 
-			//work across the row.
-			for (col = 0; col < bitmapInfoHeader.biWidth; col++)
-			{
-				unsigned char
-					red;
-				unsigned char
-					green;
-				unsigned char
-					blue;
-				//pull the pixel out of the stream
-				blue = *data_pointer++;
-				green = *data_pointer++;
-				red = *data_pointer++;
+  //The width of a line, in bytes, bust be a multiple of 4;
+  int
+    line_width;
 
-				//Now decide what color of the ink we are
-				//going to use for this pixel.
-				unsigned char
-					sub_pixel_1bit;
+  //3 bytes per pixel, round up to next 4-byte alignment
+  line_width = ((3 * bitmapInfoHeader.biWidth) + 3) & ~0x03;
 
-				//Check for the special case of it being a red pixel
-        if (enteredModule.getRBits() == 1)
+  //---------------------------------------------------------------------------
+  if (moduleData.getGBits() == 2)
+  {
+
+    if (oneDimArray)
+    {
+      fprintf(OutputDataFile,
+        "\nconst uint8_t Grey_2BPP[%d] PROGMEM = \n  {",
+        bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x03) >> 2));
+    }
+    else
+    {
+      fprintf(OutputDataFile,
+        "\nconst uint8_t Grey_2BPP[%d][%d] PROGMEM =\n  {{",
+        bitmapInfoHeader.biHeight,
+        (bitmapInfoHeader.biWidth + 0x03) >> 2);
+    }
+
+    for (row = 0; row < bitmapInfoHeader.biHeight; row++)
+    {
+      int
+        first_data_of_this_line_written;
+      first_data_of_this_line_written = 0;
+
+      if (moduleData.getTTB()) {
+        //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+      }
+      else {
+        data_pointer = bitmapData + row * line_width;
+      }
+
+      if (!moduleData.getLTR())
+      {
+        data_pointer += ((bitmapInfoHeader.biWidth) * 3) - 1;
+      }
+
+      //We need to push 4 pixels into one 8-bit byte.
+      unsigned char
+        this_2bpp_byte;
+      int
+        sub_pixel_count;
+
+      this_2bpp_byte = 0x00;
+      sub_pixel_count = 0;
+
+      //work across the row.
+      for (col = 0; col < bitmapInfoHeader.biWidth; col++)
+      {
+        unsigned char
+          red;
+        unsigned char
+          green;
+        unsigned char
+          blue;
+
+        //pull the pixel out of the stream first statement is if the display goes left to right
+        //second statement is if the display goes right to left
+        if (moduleData.getLTR())
         {
-          if ((171 < red) && (green < 110) && (blue < 110))
+          blue = *data_pointer++;
+          green = *data_pointer++;
+          red = *data_pointer++;
+        }
+        else
+        {
+          red = *data_pointer--;
+          green = *data_pointer--;
+          blue = *data_pointer--;
+        }
+
+        //Now decide what color of the ink we are
+        //going to use for this pixel.
+        unsigned char
+          sub_pixel_2bit;
+
+        //Check for the special case of it being a red pixel
+        if ((171 < red) && (green < 85) && (blue < 85))
+        {
+          //since we are writing the black/grey/white plane, we
+          //want to put white wherre this red pixel would fall.
+          sub_pixel_2bit = 0x00;  // 00 = White
+        }
+        else
+        {
+          //See if it is a white pixel
+          if ((171 < red) && (171 < green) && (171 < blue))
           {
-            //since we are writing the black/grey/white plane, we
-            //want to put white wherre this red pixel would fall.
-            sub_pixel_1bit = 0x01;  // 1 = Red
+            sub_pixel_2bit = 0x00;  // 00 = White
           }
           else
           {
-            //default to no ink
-            sub_pixel_1bit = 0x00;  // 10 = White
+            //See if it is a 50% gray pixel
+            if ((85 < red) && (red < 171) &&
+              (85 < green) && (green < 171) &&
+              (85 < blue) && (blue < 171))
+            {
+              sub_pixel_2bit = 0x01;  // 01 or 10 = Grey 
+            }
+            else
+            {
+              //default to black
+              sub_pixel_2bit = 0x03;  //11 = black
+            }
           }
         }
-        //Check for the special case of it being a yellow pixel
-        else if (enteredModule.getYBits() == 1)
+
+        //Insert those bits into the correct slot of this_2bpp_byte
+        this_2bpp_byte |= (sub_pixel_2bit) << ((3 - sub_pixel_count) * 2);
+
+        //Move to the next sub-pixel
+        sub_pixel_count++;
+        //If this byte is full, write it out and clear for the 
+        //next 4 bytes.
+        if (3 < sub_pixel_count)
         {
-          if ((228 < red) && (180 < green) && (blue < 30))
+          if (first_data_of_this_line_written)
           {
-            //since we are writing the black/grey/white plane, we
-            //want to put white wherre this red pixel would fall.
-            sub_pixel_1bit = 0x01;  // 1 = Red
+            fprintf(OutputDataFile, ",");
+          }
+          first_data_of_this_line_written = 1;
+          //Then write out the 8-bit packed pixel
+          fprintf(OutputDataFile, "0x%02X", this_2bpp_byte);
+          //Reset the byte accumulator and count
+          this_2bpp_byte = 0;
+          sub_pixel_count = 0;
+        }
+      }
+      //This is the last entry for this line. If we have not just written
+      //out the last byte, of this line write it out now.
+      if (sub_pixel_count)
+      {
+        if (first_data_of_this_line_written)
+        {
+          fprintf(OutputDataFile, ",");
+        }
+        first_data_of_this_line_written = 1;
+        //Then write out the 8bit packed pixel.
+        fprintf(OutputDataFile, "0x%02X", this_2bpp_byte);
+      }
+
+      if (oneDimArray)
+      {
+        //That is the end of one line. Complete the C syntax.
+        if (row == (bitmapInfoHeader.biHeight - 1))
+        {
+          fprintf(OutputDataFile, "};\n");
+        }
+        else
+        {
+          fprintf(OutputDataFile, ",\n   ");
+        }
+      }
+      else
+      {
+        //That is the end of one line. Complete the C syntax.
+        if (row == (bitmapInfoHeader.biHeight - 1))
+        {
+          fprintf(OutputDataFile, "}};\n");
+        }
+        else
+        {
+          fprintf(OutputDataFile, "},\n   {");
+        }
+      }
+    }
+  }//  OUTPUT2BPPGREY
+//===========================================================================
+
+
+
+
+
+  if (moduleData.getGBits() == 1)
+  {
+    //Write out the header information to the red file.
+    if (!rlEncoded)
+    {
+      if (oneDimArray)
+      {
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Mono_1BPP[%d] PROGMEM =\n  {",
+          bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
+      }
+      else
+      {
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Mono_1BPP[%d][%d] PROGMEM =\n  {{",
+          bitmapInfoHeader.biHeight,
+          (bitmapInfoHeader.biWidth + 0x07) >> 3);
+      }
+    }
+    //Now we just loop down the file, line by line (bottom first),
+    std::deque <rows_t>	redQueue;
+    rows_t rows;
+    int arraySize = 0;
+    int longestRow = 0;
+    for (row = 0; row < bitmapInfoHeader.biHeight; row++)
+    {
+      int
+        first_data_of_this_line_written;
+      first_data_of_this_line_written = 0;
+      int thisRow = arraySize;
+
+      if (moduleData.getTTB()) {
+        //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+      }
+      else {
+        data_pointer = bitmapData + row * line_width;
+      }
+
+      //check to see if the module updates from left to right, if it's right to left we need to move the pointer
+      if (!moduleData.getLTR())
+      {
+        data_pointer += ((bitmapInfoHeader.biWidth) * 3) - 1;
+      }
+
+      //We need to push 8 pixels into one 8-bit byte.
+      unsigned char
+        this_1bpp_byte;
+      int
+        sub_pixel_count;
+      unsigned char holder1 = 0x00;
+      unsigned char holder2 = 0x00;
+      unsigned char holder3 = 0x00;
+      unsigned char rle_counter = 0;
+      bool rle_active = false;
+
+      this_1bpp_byte = 0x00;
+      sub_pixel_count = 0;
+
+      //work across the row
+      for (col = 0; col < bitmapInfoHeader.biWidth; col++)
+      {
+        unsigned char
+          red;
+        unsigned char
+          green;
+        unsigned char
+          blue;
+
+        //pull the pixel out of the stream first statement is if the display goes left to right
+        //second statement is if the display goes right to left
+        if (moduleData.getLTR())
+        {
+          blue = *data_pointer++;
+          green = *data_pointer++;
+          red = *data_pointer++;
+        }
+        else
+        {
+          red = *data_pointer--;
+          green = *data_pointer--;
+          blue = *data_pointer--;
+        }
+
+        //Now decide what color of the ink we are
+        //going to use for this pixel.
+        unsigned char
+          sub_pixel_1bit;
+
+        //White is just above 50% grey
+        if (127 > ((red*.21) + (green*.72) + (blue*.07)))
+        {
+          //black, put the ink
+          if (!moduleData.getReverseColor())
+          {
+            sub_pixel_1bit = 0x01;  // 1 = black
           }
           else
           {
-            //default to no ink
-            sub_pixel_1bit = 0x00;  // 10 = White
+            sub_pixel_1bit = 0x00;  // 0 = black
+          }
+        }
+        else
+        {
+          //This is white, no ink
+          if (!moduleData.getReverseColor())
+          {
+            sub_pixel_1bit = 0x00;  // 0 = white
+          }
+          else
+          {
+            sub_pixel_1bit = 0x01;  // 1 = white
           }
         }
 
+        //Insert those bits into the correct slot of this_2bpp_byte
+        this_1bpp_byte |= (sub_pixel_1bit) << (7 - sub_pixel_count);
 
-				//Insert those bits into the correct slot of this_2bpp_byte
-				this_1bpp_byte |= (sub_pixel_1bit) << (7 - sub_pixel_count);
+        //Move to the next sub-pixel
+        sub_pixel_count++;
+        //If this byte is full, write it out and clear for the 
+        //next 4 bytes.
+        if (7 < sub_pixel_count)
+        {
 
-				//Move to the next sub-pixel
-				sub_pixel_count++;
-				//If this byte is full, write it out and clear for the 
-				//next 4 bytes.
-				if (7 < sub_pixel_count)
-				{
-					if (first_data_of_this_line_written)
-					{
-						fprintf(Grey_2bit_and_Red_1bit_out, ",");
-					}
-					first_data_of_this_line_written = 1;
+          //TODO: finish IF statement to check if RLE decoding is selected
+          if (rlEncoded)
+          {
 
-					//Then write out the 8-bit packed pixel byte
-					fprintf(Grey_2bit_and_Red_1bit_out, "0x%02X", this_1bpp_byte);
-					//Reset the byte accumulator and count
-					this_1bpp_byte = 0;
-					sub_pixel_count = 0;
-				}
-			}
-			//This is the last entry for this line. If we have not just written
-			//out the last byte, of this line write it out now.
-			if (sub_pixel_count)
-			{
-				if (first_data_of_this_line_written)
-				{
-					fprintf(Grey_2bit_and_Red_1bit_out, ",");
-				}
-				first_data_of_this_line_written = 1;
+            //  //if we're past the first two bytes of data
+            if (first_data_of_this_line_written == 1)
+            {
+              //addToRow(rlEncoded, &rle_active, &rle_counter, &arraySize, &rows, holder1, holder2, this_1bpp_byte);
+                  //if we have a situation where we can increment the rle counter
+              if (holder1 == holder2 && holder2 == this_1bpp_byte)
+              {
+                if (rle_active)
+                {
+                  rle_counter++;
+                }
+                else
+                {
+                  rle_counter = 3;
+                  rle_active = true;
+                }
+              }
+              //situation where we've hit a byte that stops us from incrementing the rle counter
+              else if (rle_active)
+              {
+                if (holder1 != holder2)
+                {
+                  rows.rlePairs.push_back(rlePair_t{ rle_counter, holder1 });
+                  rle_active = false;
+                  arraySize += 2;
+                }
+              }
+              //situation where we are not in a loop of the rle counter working
+              else
+              {
+                rows.rlePairs.push_back(rlePair_t{ 1,holder1 });
+                arraySize += 2;
+              }
+            }
+            else
+            {
+              if (first_data_of_this_line_written == -1)
+              {
+                first_data_of_this_line_written = 1;
+              }
+              else
+              {
+                first_data_of_this_line_written = -1;
+              }
+            }
+            holder1 = holder2;
+            holder2 = this_1bpp_byte;
+          }
+          else
+          {
+            if (first_data_of_this_line_written)
+            {
+              fprintf(OutputDataFile, ",");
+            }
+            first_data_of_this_line_written = 1;
+            //Then write out the 16-bit packed pixel to the bin file.
+            fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+          }
+          //Reset the byte accumulator and count
+          this_1bpp_byte = 0;
+          sub_pixel_count = 0;
+        }
+      }
 
-				//Then write out the 16-bit packed pixel to the bin file.
-				fprintf(Grey_2bit_and_Red_1bit_out, "0x%02X", this_1bpp_byte);
-			}
-#if ONE_DIM
-			//That is the end of one line. Complete the C syntax.
-			if (row == (bitmapInfoHeader.biHeight - 1))
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "};\n");
-			}
-			else
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, ",\n   ");
-			}
-#else
-			//That is the end of one line. Complete the C syntax.
-			if (row == (bitmapInfoHeader.biHeight - 1))
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "}};\n");
-			}
-			else
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "},\n   {");
-			}
-#endif
-		}
-	}  //  OUTPUT1BPPRED
-	//---------------------------------------------------------------------------
+      //This is the last entry for this line. If we have not just written
+      //out the last byte, of this line write it out now.
 
-	if (enteredModule.getGBits() == 1)
-	{
-		//Write out the header information to the red file.
-#if ONE_DIM
-		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst uint8_t Mono_1BPP[%d] PROGMEM =\n  {",
-			bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
-#else
-		fprintf(Grey_2bit_and_Red_1bit_out,
-			"\nconst uint8_t Mono_1BPP[%d][%d] PROGMEM =\n  {{",
-			bitmapInfoHeader.biHeight,
-			(bitmapInfoHeader.biWidth + 0x07) >> 3);
-#endif
-		//Now we just loop down the file, line by line (bottom first),
-		for (row = 0; row < bitmapInfoHeader.biHeight; row++)
-		{
-			int
-				first_data_of_this_line_written;
-			first_data_of_this_line_written = 0;
+      //check to see if we're going to use RLE or just print out each byte
+      if (rlEncoded)
+      {
+        if (rle_active)
+        {
+          rows.rlePairs.push_back(rlePair_t{ rle_counter,holder1 });
+          //If holder1 and holder2 do not match, that means we have another 
+          //unique byte at the end of the line to account for
+          if (holder1 != holder2)
+          {
+            rows.rlePairs.push_back(rlePair_t{ 1,holder2 });
+            arraySize += 2;
+          }
+          rle_active = false;
+          arraySize += 2;
+        }
+        //TODO: check to make sure this works for pixels that are trailing
+        else
+        {
+          rows.rlePairs.push_back(rlePair_t{ 1, holder1 });
+          rows.rlePairs.push_back(rlePair_t{ 1, holder2 });
+          arraySize += 4;
+        }
+      }
+      else
+      {
+        if (sub_pixel_count)
+        {
+          if (first_data_of_this_line_written)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          first_data_of_this_line_written = 0;
+          //Then write out the 16-bit packed pixel to the bin file.
+          fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+        }
 
-			//Point to the current row in the bitmap data (starting at the bottom)
-			data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+        if (oneDimArray)
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, ",\n   ");
+          }
+        }
+        else
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "}};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, "},\n   {");
+          }
+        }
+      }
+      //only used for two dimensional arrays to capture the longest row
+      if (longestRow < (arraySize - thisRow))
+      {
+        longestRow = (arraySize - thisRow);
+      }
+      //before going to the next row, push this row into the deque
+      redQueue.push_back(rows);
+      rows.rlePairs.clear();
+    }
+    //write the file at the end of the statement
+    if (rlEncoded)
+    {
 
-			//check to see if the module updates from left to right, if it's right to left we need to move the pointer
-			if (!enteredModule.getLTR())
-			{
-				data_pointer += ((bitmapInfoHeader.biWidth) * 3) - 1;
-			}
+      if (oneDimArray)
+      {
+        fprintf(OutputDataFile, "\n#define MONO_ARRAY_SIZE (%d)\n", arraySize);
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Mono_1BPP[%d] PROGMEM =\n  {", arraySize);
+      }
+      else
+      {
+        fprintf(OutputDataFile, "\n#define MONO_WIDTH_SIZE (%d)", longestRow);
+        fprintf(OutputDataFile, "\n#define MONO_HEIGHT_SIZE (%d)\n", bitmapInfoHeader.biHeight);
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Mono_1BPP[%d][%d] PROGMEM =\n  {{",
+          bitmapInfoHeader.biHeight,
+          longestRow);
+      }
+      //loop through the queue to print to the file
+      unsigned char rle_count;
+      unsigned char rle_val;
+      while (redQueue.size() > 0)
+      {
+        while (redQueue.at(0).rlePairs.size() > 0)
+        {
+          rle_count = redQueue.at(0).rlePairs.at(0).count;
+          rle_val = redQueue.at(0).rlePairs.at(0).val;
+          fprintf(OutputDataFile, "%d,", rle_count);
+          fprintf(OutputDataFile, "0x%02X", rle_val);
+          //check to see if it's the last character
+          if (redQueue.size() != 1 && redQueue.at(0).rlePairs.size() != 1)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          redQueue.at(0).rlePairs.pop_front();
+        }
+        redQueue.pop_front();
 
-			//We need to push 8 pixels into one 8-bit byte.
-			unsigned char
-				this_1bpp_byte;
-			int
-				sub_pixel_count;
+        if (oneDimArray)
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (redQueue.size() == 0)
+          {
+            fprintf(OutputDataFile, "};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, ",\n   ");
+          }
+        }
+        else
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "}};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, "},\n   {");
+          }
+        }
+      }
+    }
+  }  //  OUTPUT1BPPMONO
+//===========================================================================
 
-			this_1bpp_byte = 0x00;
-			sub_pixel_count = 0;
 
-			//work across the row
-			for (col = 0; col < bitmapInfoHeader.biWidth; col++)
-			{
-				unsigned char
-					red;
-				unsigned char
-					green;
-				unsigned char
-					blue;
 
-				//pull the pixel out of the stream first statement is if the display goes left to right
-				//second statement is if the display goes right to left
-				if (enteredModule.getLTR())
-				{
-					red = *data_pointer++;
-					green = *data_pointer++;
-					blue = *data_pointer++;
-					printf("\nr: %i\t|g: %i\t|b: %i\t|", red, green, blue);
-				}
-				else 
-				{
-					red = *data_pointer--;
-					green = *data_pointer--;
-					blue = *data_pointer--;
-				}
 
-				//Now decide what color of the ink we are
-				//going to use for this pixel.
-				unsigned char
-					sub_pixel_1bit;
+  if (moduleData.getRBits() == 1)
+  {
+    //Write out the header information to the red file.
+    if (!rlEncoded)
+    {
+      if (oneDimArray)
+      {
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {",
+          bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
+      }
+      else
+      {
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
+          bitmapInfoHeader.biHeight,
+          (bitmapInfoHeader.biWidth + 0x07) >> 3);
+      }
+    }
+    //Now we just loop down the file, line by line (bottom first),
+    std::deque <rows_t>	redQueue;
+    rows_t rows;
+    int arraySize = 0;
+    int longestRow = 0;
+    for (row = 0; row < bitmapInfoHeader.biHeight; row++)
+    {
+      int
+        first_data_of_this_line_written;
+      first_data_of_this_line_written = 0;
+      int thisRow = arraySize;
 
-				//White is just above 50% grey
-				if (127 > ((red*.21)+(green*.72)+(blue*.07)))
-				{
-					//TODO check this 
-					//black, put the ink
-					if (!enteredModule.getReverseColor())
-					{
-						sub_pixel_1bit = 0x01;  // 1 = black
-					}
-					else
-					{
-						sub_pixel_1bit = 0x00;  // 0 = black
-					}
-					
-				}
-				else
-				{
-					//This is white, no ink
-					if (!enteredModule.getReverseColor())
-					{
-						sub_pixel_1bit = 0x00;  // 0 = white
-					}
-					else
-					{
-						sub_pixel_1bit = 0x01;  // 1 = white
-					}
+      if (moduleData.getTTB()) {
+        //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+      }
+      else {
+        data_pointer = bitmapData + row * line_width;
+      }
 
-				}
+      //check to see if the module updates from left to right, if it's right to left we need to move the pointer
+      if (!moduleData.getLTR())
+      {
+        data_pointer += ((bitmapInfoHeader.biWidth) * 3) - 1;
+      }
 
-				//Insert those bits into the correct slot of this_2bpp_byte
-				this_1bpp_byte |= (sub_pixel_1bit) << (7 - sub_pixel_count);
+      //We need to push 8 pixels into one 8-bit byte.
+      unsigned char
+        this_1bpp_byte;
+      int
+        sub_pixel_count;
+      unsigned char holder1 = 0x00;
+      unsigned char holder2 = 0x00;
+      unsigned char holder3 = 0x00;
+      unsigned char rle_counter = 0;
+      bool rle_active = false;
 
-				//Move to the next sub-pixel
-				sub_pixel_count++;
-				//If this byte is full, write it out and clear for the 
-				//next 4 bytes.
-				if (7 < sub_pixel_count)
-				{
-					if (first_data_of_this_line_written)
-					{
-						fprintf(Grey_2bit_and_Red_1bit_out, ",");
-					}
-					first_data_of_this_line_written = 1;
+      this_1bpp_byte = 0x00;
+      sub_pixel_count = 0;
 
-					//Then write out the 8-bit packed pixel byte
-					fprintf(Grey_2bit_and_Red_1bit_out, "0x%02X", this_1bpp_byte);
-					//Reset the byte accumulator and count
-					this_1bpp_byte = 0;
-					sub_pixel_count = 0;
-				}
-			}
-			//This is the last entry for this line. If we have not just written
-			//out the last byte, of this line write it out now.
-			if (sub_pixel_count)
-			{
-				if (first_data_of_this_line_written)
-				{
-					fprintf(Grey_2bit_and_Red_1bit_out, ",");
-				}
-				first_data_of_this_line_written = 1;
+      //work across the row
+      for (col = 0; col < bitmapInfoHeader.biWidth; col++)
+      {
+        unsigned char
+          red;
+        unsigned char
+          green;
+        unsigned char
+          blue;
 
-				//Then write out the 16-bit packed pixel to the bin file.
-				fprintf(Grey_2bit_and_Red_1bit_out, "0x%02X", this_1bpp_byte);
-			}
-#if ONE_DIM
-			//That is the end of one line. Complete the C syntax.
-			if (row == (bitmapInfoHeader.biHeight - 1))
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "};\n");
-			}
-			else
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, ",\n   ");
-			}
-#else
-			//That is the end of one line. Complete the C syntax.
-			if (row == (bitmapInfoHeader.biHeight - 1))
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "}};\n");
-			}
-			else
-			{
-				fprintf(Grey_2bit_and_Red_1bit_out, "},\n   {");
-			}
-#endif
-		}
-	}  // OUTPUT1BPPMONO
-	//---------------------------------------------------------------------------
+        //pull the pixel out of the stream first statement is if the display goes left to right
+        //second statement is if the display goes right to left
+        if (moduleData.getLTR())
+        {
+          blue = *data_pointer++;
+          green = *data_pointer++;
+          red = *data_pointer++;
+        }
+        else
+        {
+          red = *data_pointer--;
+          green = *data_pointer--;
+          blue = *data_pointer--;
+        }
 
-	  //Done with the output file.
-	fclose(Grey_2bit_and_Red_1bit_out);
+        //Now decide what color of the ink we are
+        //going to use for this pixel.
+        unsigned char
+          sub_pixel_1bit;
 
-	//free the memory allocated by LoadBitmapFile
-	free(bitmapData);
+        //Check to see if it's a red pixel
+        if ((155 < red) && (green < 110) && (blue < 110))
+        {
+          //red, put the ink
+          if (!moduleData.getReverseColor())
+          {
+            sub_pixel_1bit = 0x01;  // 1 = black
+          }
+          else
+          {
+            sub_pixel_1bit = 0x00;  // 0 = black
+          }
+        }
+        else
+        {
+          //This is not red, no ink
+          if (!moduleData.getReverseColor())
+          {
+            sub_pixel_1bit = 0x00;  // 0 = white
+          }
+          else
+          {
+            sub_pixel_1bit = 0x01;  // 1 = white
+          }
+        }
 
-	printf("Complete.\n");
+        //Insert those bits into the correct slot of this_2bpp_byte
+        this_1bpp_byte |= (sub_pixel_1bit) << (7 - sub_pixel_count);
 
-	//Indicate success, exit
-	return(0);
+        //Move to the next sub-pixel
+        sub_pixel_count++;
+        //If this byte is full, write it out and clear for the 
+        //next 4 bytes.
+        if (7 < sub_pixel_count)
+        {
+
+          //TODO: finish IF statement to check if RLE decoding is selected
+          if (rlEncoded)
+          {
+
+            //  //if we're past the first two bytes of data
+            if (first_data_of_this_line_written == 1)
+            {
+              //if we have a situation where we can increment the rle counter
+              if (holder1 == holder2 && holder2 == this_1bpp_byte)
+              {
+                if (rle_active)
+                {
+                  rle_counter++;
+                }
+                else
+                {
+                  rle_counter = 3;
+                  rle_active = true;
+                }
+              }
+              //situation where we've hit a byte that stops us from incrementing the rle counter
+              else if (rle_active)
+              {
+                if (holder1 != holder2)
+                {
+                  rows.rlePairs.push_back(rlePair_t{ rle_counter, holder1 });
+                  rle_active = false;
+                  arraySize += 2;
+                }
+              }
+              //situation where we are not in a loop of the rle counter working
+              else
+              {
+                rows.rlePairs.push_back(rlePair_t{ 1,holder1 });
+                arraySize += 2;
+              }
+            }
+            else
+            {
+              if (first_data_of_this_line_written == -1)
+              {
+                first_data_of_this_line_written = 1;
+              }
+              else
+              {
+                first_data_of_this_line_written = -1;
+              }
+            }
+            holder1 = holder2;
+            holder2 = this_1bpp_byte;
+          }
+          else
+          {
+            if (first_data_of_this_line_written)
+            {
+              fprintf(OutputDataFile, ",");
+            }
+            first_data_of_this_line_written = 1;
+            //Then write out the 16-bit packed pixel to the bin file.
+            fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+          }
+          //Reset the byte accumulator and count
+          this_1bpp_byte = 0;
+          sub_pixel_count = 0;
+        }
+      }
+
+      //This is the last entry for this line. If we have not just written
+      //out the last byte, of this line write it out now.
+
+      //check to see if we're going to use RLE or just print out each byte
+      if (rlEncoded)
+      {
+        if (rle_active)
+        {
+          rows.rlePairs.push_back(rlePair_t{ rle_counter,holder1 });
+          //If holder1 and holder2 do not match, that means we have another 
+          //unique byte at the end of the line to account for
+          if (holder1 != holder2)
+          {
+            rows.rlePairs.push_back(rlePair_t{ 1,holder2 });
+            arraySize += 2;
+          }
+          rle_active = false;
+          arraySize += 2;
+        }
+        //TODO: check to make sure this works for pixels that are trailing
+        else
+        {
+          rows.rlePairs.push_back(rlePair_t{ 1, holder1 });
+          rows.rlePairs.push_back(rlePair_t{ 1, holder2 });
+          arraySize += 4;
+        }
+      }
+      else
+      {
+        if (sub_pixel_count)
+        {
+          if (first_data_of_this_line_written)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          first_data_of_this_line_written = 0;
+          //Then write out the 16-bit packed pixel to the bin file.
+          fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+        }
+
+        if (oneDimArray)
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, ",\n   ");
+          }
+        }
+        else
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "}};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, "},\n   {");
+          }
+        }
+      }
+      //only used for two dimensional arrays to capture the longest row
+      if (longestRow < (arraySize - thisRow))
+      {
+        longestRow = (arraySize - thisRow);
+      }
+      //before going to the next row, push this row into the deque
+      redQueue.push_back(rows);
+      rows.rlePairs.clear();
+    }
+    //write the file at the end of the statement
+    if (rlEncoded)
+    {
+
+      if (oneDimArray)
+      {
+        fprintf(OutputDataFile, "\n#define RED_ARRAY_SIZE (%d)\n", arraySize);
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {", arraySize);
+      }
+      else
+      {
+        fprintf(OutputDataFile, "\n#define RED_WIDTH_SIZE (%d)", longestRow);
+        fprintf(OutputDataFile, "\n#define RED_HEIGHT_SIZE (%d)\n", bitmapInfoHeader.biHeight);
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
+          bitmapInfoHeader.biHeight,
+          longestRow);
+      }
+      //loop through the queue to print to the file
+      unsigned char rle_count;
+      unsigned char rle_val;
+      while (redQueue.size() > 0)
+      {
+        while (redQueue.at(0).rlePairs.size() > 0)
+        {
+          rle_count = redQueue.at(0).rlePairs.at(0).count;
+          rle_val = redQueue.at(0).rlePairs.at(0).val;
+          fprintf(OutputDataFile, "%d,", rle_count);
+          fprintf(OutputDataFile, "0x%02X", rle_val);
+          //check to see if it's the last character
+          if (redQueue.size() != 1 && redQueue.at(0).rlePairs.size() != 1)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          redQueue.at(0).rlePairs.pop_front();
+        }
+        redQueue.pop_front();
+
+        if (oneDimArray)
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (redQueue.size() == 0)
+          {
+            fprintf(OutputDataFile, "};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, ",\n   ");
+          }
+        }
+        else
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "}};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, "},\n   {");
+          }
+        }
+      }
+    }
+  }  //  OUTPUT1BPPRED
+//===========================================================================
+
+
+
+
+
+  if (moduleData.getYBits() == 1)
+  {
+    //Write out the header information to the red file.
+    if (!rlEncoded)
+    {
+      if (oneDimArray)
+      {
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Yellow_1BPP[%d] PROGMEM =\n  {",
+          bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
+      }
+      else
+      {
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Yellow_1BPP[%d][%d] PROGMEM =\n  {{",
+          bitmapInfoHeader.biHeight,
+          (bitmapInfoHeader.biWidth + 0x07) >> 3);
+      }
+    }
+    //Now we just loop down the file, line by line (bottom first),
+    std::deque <rows_t>	redQueue;
+    rows_t rows;
+    int arraySize = 0;
+    int longestRow = 0;
+    for (row = 0; row < bitmapInfoHeader.biHeight; row++)
+    {
+      int
+        first_data_of_this_line_written;
+      first_data_of_this_line_written = 0;
+      int thisRow = arraySize;
+
+      if (moduleData.getTTB()) {
+        //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+      }
+      else {
+        data_pointer = bitmapData + row * line_width;
+      }
+
+      //check to see if the module updates from left to right, if it's right to left we need to move the pointer
+      if (!moduleData.getLTR())
+      {
+        data_pointer += ((bitmapInfoHeader.biWidth) * 3) - 1;
+      }
+
+      //We need to push 8 pixels into one 8-bit byte.
+      unsigned char
+        this_1bpp_byte;
+      int
+        sub_pixel_count;
+      unsigned char holder1 = 0x00;
+      unsigned char holder2 = 0x00;
+      unsigned char holder3 = 0x00;
+      unsigned char rle_counter = 0;
+      bool rle_active = false;
+
+      this_1bpp_byte = 0x00;
+      sub_pixel_count = 0;
+
+      //work across the row
+      for (col = 0; col < bitmapInfoHeader.biWidth; col++)
+      {
+        unsigned char
+          red;
+        unsigned char
+          green;
+        unsigned char
+          blue;
+
+        //pull the pixel out of the stream first statement is if the display goes left to right
+        //second statement is if the display goes right to left
+        if (moduleData.getLTR())
+        {
+          blue = *data_pointer++;
+          green = *data_pointer++;
+          red = *data_pointer++;
+        }
+        else
+        {
+          red = *data_pointer--;
+          green = *data_pointer--;
+          blue = *data_pointer--;
+        }
+
+        //Now decide what color of the ink we are
+        //going to use for this pixel.
+        unsigned char
+          sub_pixel_1bit;
+
+        //check to see if it's a yellow pixel
+        if ((228 < red) && (180 < green) && (blue < 30))
+        {
+          //yellow, put the ink
+          if (!moduleData.getReverseColor())
+          {
+            sub_pixel_1bit = 0x01;  // 1 = yellow
+          }
+          else
+          {
+            sub_pixel_1bit = 0x00;  // 0 = yellow
+          }
+        }
+        else
+        {
+          //This is non-yellow, no ink
+          if (!moduleData.getReverseColor())
+          {
+            sub_pixel_1bit = 0x00;  // 0 = non-yellow
+          }
+          else
+          {
+            sub_pixel_1bit = 0x01;  // 1 = non-yellow
+          }
+        }
+
+        //Insert those bits into the correct slot of this_2bpp_byte
+        this_1bpp_byte |= (sub_pixel_1bit) << (7 - sub_pixel_count);
+
+        //Move to the next sub-pixel
+        sub_pixel_count++;
+        //If this byte is full, write it out and clear for the 
+        //next 4 bytes.
+        if (7 < sub_pixel_count)
+        {
+
+          //TODO: finish IF statement to check if RLE decoding is selected
+          if (rlEncoded)
+          {
+
+            //  //if we're past the first two bytes of data
+            if (first_data_of_this_line_written == 1)
+            {
+              //if we have a situation where we can increment the rle counter
+              if (holder1 == holder2 && holder2 == this_1bpp_byte)
+              {
+                if (rle_active)
+                {
+                  rle_counter++;
+                }
+                else
+                {
+                  rle_counter = 3;
+                  rle_active = true;
+                }
+              }
+              //situation where we've hit a byte that stops us from incrementing the rle counter
+              else if (rle_active)
+              {
+                if (holder1 != holder2)
+                {
+                  rows.rlePairs.push_back(rlePair_t{ rle_counter, holder1 });
+                  rle_active = false;
+                  arraySize += 2;
+                }
+              }
+              //situation where we are not in a loop of the rle counter working
+              else
+              {
+                rows.rlePairs.push_back(rlePair_t{ 1,holder1 });
+                arraySize += 2;
+              }
+            }
+            else
+            {
+              if (first_data_of_this_line_written == -1)
+              {
+                first_data_of_this_line_written = 1;
+              }
+              else
+              {
+                first_data_of_this_line_written = -1;
+              }
+            }
+            holder1 = holder2;
+            holder2 = this_1bpp_byte;
+          }
+          else
+          {
+            if (first_data_of_this_line_written)
+            {
+              fprintf(OutputDataFile, ",");
+            }
+            first_data_of_this_line_written = 1;
+            //Then write out the 16-bit packed pixel to the bin file.
+            fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+          }
+          //Reset the byte accumulator and count
+          this_1bpp_byte = 0;
+          sub_pixel_count = 0;
+        }
+      }
+
+      //This is the last entry for this line. If we have not just written
+      //out the last byte, of this line write it out now.
+
+      //check to see if we're going to use RLE or just print out each byte
+      if (rlEncoded)
+      {
+        if (rle_active)
+        {
+          rows.rlePairs.push_back(rlePair_t{ rle_counter,holder1 });
+          //If holder1 and holder2 do not match, that means we have another 
+          //unique byte at the end of the line to account for
+          if (holder1 != holder2)
+          {
+            rows.rlePairs.push_back(rlePair_t{ 1,holder2 });
+            arraySize += 2;
+          }
+          rle_active = false;
+          arraySize += 2;
+        }
+        //TODO: check to make sure this works for pixels that are trailing
+        else
+        {
+          rows.rlePairs.push_back(rlePair_t{ 1, holder1 });
+          rows.rlePairs.push_back(rlePair_t{ 1, holder2 });
+          arraySize += 4;
+        }
+      }
+      else
+      {
+        if (sub_pixel_count)
+        {
+          if (first_data_of_this_line_written)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          first_data_of_this_line_written = 0;
+          //Then write out the 16-bit packed pixel to the bin file.
+          fprintf(OutputDataFile, "0x%02X", this_1bpp_byte);
+        }
+
+        if (oneDimArray)
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, ",\n   ");
+          }
+        }
+        else
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "}};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, "},\n   {");
+          }
+        }
+      }
+      //only used for two dimensional arrays to capture the longest row
+      if (longestRow < (arraySize - thisRow))
+      {
+        longestRow = (arraySize - thisRow);
+      }
+      //before going to the next row, push this row into the deque
+      redQueue.push_back(rows);
+      rows.rlePairs.clear();
+    }
+    //write the file at the end of the statement
+    if (rlEncoded)
+    {
+
+      if (oneDimArray)
+      {
+        fprintf(OutputDataFile, "\n#define YELLOW_ARRAY_SIZE (%d)\n", arraySize);
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Yellow_1BPP[%d] PROGMEM =\n  {", arraySize);
+      }
+      else
+      {
+        fprintf(OutputDataFile, "\n#define YELLOW_WIDTH_SIZE (%d)", longestRow);
+        fprintf(OutputDataFile, "\n#define YELLOW_HEIGHT_SIZE (%d)\n", bitmapInfoHeader.biHeight);
+        fprintf(OutputDataFile,
+          "\nconst uint8_t Yellow_1BPP[%d][%d] PROGMEM =\n  {{",
+          bitmapInfoHeader.biHeight,
+          longestRow);
+      }
+      //loop through the queue to print to the file
+      unsigned char rle_count;
+      unsigned char rle_val;
+      while (redQueue.size() > 0)
+      {
+        while (redQueue.at(0).rlePairs.size() > 0)
+        {
+          rle_count = redQueue.at(0).rlePairs.at(0).count;
+          rle_val = redQueue.at(0).rlePairs.at(0).val;
+          fprintf(OutputDataFile, "%d,", rle_count);
+          fprintf(OutputDataFile, "0x%02X", rle_val);
+          //check to see if it's the last character
+          if (redQueue.size() != 1 && redQueue.at(0).rlePairs.size() != 1)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          redQueue.at(0).rlePairs.pop_front();
+        }
+        redQueue.pop_front();
+
+        if (oneDimArray)
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (redQueue.size() == 0)
+          {
+            fprintf(OutputDataFile, "};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, ",\n   ");
+          }
+        }
+        else
+        {
+          //That is the end of one line. Complete the C syntax.
+          if (row == (bitmapInfoHeader.biHeight - 1))
+          {
+            fprintf(OutputDataFile, "}};\n");
+          }
+          else
+          {
+            fprintf(OutputDataFile, "},\n   {");
+          }
+        }
+      }
+    }
+  }  //  OUTPUT1BPPYELLOW
+//===========================================================================
+
+
+
+     //Done with the output file.
+  fclose(OutputDataFile);
+
+  //free the memory allocated by LoadBitmapFile
+  free(bitmapData);
+
+  printf("Complete.\n");
+
+  //Indicate success, exit
+  return(0);
 }
 //===========================================================================
