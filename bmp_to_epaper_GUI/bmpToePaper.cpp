@@ -84,7 +84,7 @@
 //  }BITMAPINFOHEADER;
 //
 //===========================================================================
-std::string getOutputFile(const char *path)
+std::string getOutputFile(const char* path)
 {
   std::string
     myPath;
@@ -107,16 +107,16 @@ std::string getOutputFile(const char *path)
   return myPath;
 }
 
-unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
+unsigned char* LoadBitmapFile(char* filename, BITMAPINFOHEADER* bitmapInfoHeader)
 {
   FILE
-    *filePtr;
+    * filePtr;
   BITMAPFILEHEADER
     bitmapFileHeader;
 
   //We will allocate memory for the bitmap, image data at this pointer.
   unsigned char
-    *bitmapImage;
+    * bitmapImage;
   size_t
     bytes_read_from_bitmap;
   errno_t
@@ -146,7 +146,7 @@ unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
   //move file point to the begining of bitmap data
   fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
 
-  int imageSize = bitmapInfoHeader->biHeight*bitmapInfoHeader->biWidth * 3;
+  int imageSize = bitmapInfoHeader->biHeight * bitmapInfoHeader->biWidth * 3;
 
   //allocate enough memory for the bitmap image data
   bitmapImage = (unsigned char*)malloc(imageSize);
@@ -186,7 +186,7 @@ unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
   return(bitmapImage);
 }
 //===========================================================================
-void usage(char *our_name)
+void usage(char* our_name)
 {
   printf("Usage:\n");
   printf("  %s [infile]\n", our_name);
@@ -202,7 +202,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
   BITMAPINFOHEADER
     bitmapInfoHeader;
   unsigned char
-    *bitmapData;
+    * bitmapData;
 
   std::string outputFile = getOutputFile(pathName);
 
@@ -226,7 +226,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
   errno_t
     file_open_err;
   FILE
-    *OutputDataFile;
+    * OutputDataFile;
 
   file_open_err = fopen_s(&OutputDataFile, outputFile.c_str(), "wt");
   if (file_open_err)
@@ -240,28 +240,31 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
   printf("Opened \"%s\" as the 2bpp grey + 1bpp red output file.\n", outputFile.c_str());
 
   //The output file is open. Write out the header information to the grey file.
-  fprintf(OutputDataFile, 
-    "/* \n"
-    " * Generated using \"BMP TO EPAPER\" by Crystalfontz of America\n"
-    " * \n"
-    " * The program can be found on our website at : \n"
-    " *     https://www.crystalfontz.com/product/bmptoepaper-bitmap-to-epaper-software \n"
-    " * \n"
-    " * Or, the code can be forked from GitHub : \n"
-    " *     https://github.com/crystalfontz/bmp_to_epaper \n"
-    " * \n"
-    " * RLE Image: %s\n"
-    " * Non-Inverted Image: %s\n"
-    " * One Dimensional Array: %s\n"
-    " */\n\n",
-    (rlEncoded ? "true" : "false"),
-    (moduleData.getInverted() ? "true" : "false"),
-    (oneDimArray ? "true" : "false")
+  fprintf(OutputDataFile,
+          "/* \n"
+          " * Generated using \"BMP TO EPAPER\" by Crystalfontz of America\n"
+          " * \n"
+          " * The program can be found on our website at : \n"
+          " *     https://www.crystalfontz.com/product/bmptoepaper-bitmap-to-epaper-software \n"
+          " * \n"
+          " * Or, the code can be forked from GitHub : \n"
+          " *     https://github.com/crystalfontz/bmp_to_epaper \n"
+          " * \n"
+          " * RLE Image: %s\n"
+          " * Non-Inverted Image: %s\n"
+          " * One Dimensional Array: %s\n"
+          " */\n\n",
+          (rlEncoded ? "true" : "false"),
+          (moduleData.getInverted() ? "true" : "false"),
+          (oneDimArray ? "true" : "false")
   );
 
   fprintf(OutputDataFile, "//Source image file: \"%s\"\n", pathName);
   fprintf(OutputDataFile, "#define HEIGHT_PIXELS    (%d)\n", bitmapInfoHeader.biHeight);
   fprintf(OutputDataFile, "#define WIDTH_PIXELS     (%d)\n", bitmapInfoHeader.biWidth);
+
+  if (moduleData.getBWBits() == 4)
+    fprintf(OutputDataFile, "#define WIDTH_GREY_BYTES (%d)\n", (bitmapInfoHeader.biWidth + 0x01) >> 1);
 
   if (moduleData.getBWBits() == 2)
     fprintf(OutputDataFile, "#define WIDTH_GREY_BYTES (%d)\n", (bitmapInfoHeader.biWidth + 0x03) >> 2);
@@ -284,7 +287,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
 
   //Our pointer into the bitmap data
   unsigned char
-    *data_pointer;
+    * data_pointer;
 
   //The width of a line, in bytes, bust be a multiple of 4;
   int
@@ -300,15 +303,15 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
     if (oneDimArray)
     {
       fprintf(OutputDataFile,
-        "\nconst uint8_t Grey_2BPP[%d] PROGMEM = \n  {",
-        bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x03) >> 2));
+              "\nconst uint8_t Grey_2BPP[%d] PROGMEM = \n  {",
+              bitmapInfoHeader.biHeight * ((bitmapInfoHeader.biWidth + 0x03) >> 2));
     }
     else
     {
       fprintf(OutputDataFile,
-        "\nconst uint8_t Grey_2BPP[%d][%d] PROGMEM =\n  {{",
-        bitmapInfoHeader.biHeight,
-        (bitmapInfoHeader.biWidth + 0x03) >> 2);
+              "\nconst uint8_t Grey_2BPP[%d][%d] PROGMEM =\n  {{",
+              bitmapInfoHeader.biHeight,
+              (bitmapInfoHeader.biWidth + 0x03) >> 2);
     }
 
     for (row = 0; row < bitmapInfoHeader.biHeight; row++)
@@ -319,7 +322,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
 
       if (moduleData.getTTB()) {
         //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
-        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row) * line_width;
       }
       else {
         data_pointer = bitmapData + row * line_width;
@@ -388,7 +391,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
             //See if it is a 50% gray pixel
             if ((85 < red) && (red < 171) &&
               (85 < green) && (green < 171) &&
-              (85 < blue) && (blue < 171))
+                (85 < blue) && (blue < 171))
             {
               sub_pixel_2bit = 0x01;  // 01 or 10 = Grey 
             }
@@ -465,6 +468,172 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
 
 
 
+  if (moduleData.getBWBits() == 4)
+  {
+
+    if (oneDimArray)
+    {
+      fprintf(OutputDataFile,
+              "\nconst uint8_t Grey_2BPP[%d] PROGMEM = \n  {",
+              bitmapInfoHeader.biHeight * ((bitmapInfoHeader.biWidth + 0x01) >> 1));
+    }
+    else
+    {
+      fprintf(OutputDataFile,
+              "\nconst uint8_t Grey_2BPP[%d][%d] PROGMEM =\n  {{",
+              bitmapInfoHeader.biHeight,
+              (bitmapInfoHeader.biWidth + 0x01) >> 1);
+    }
+
+    for (row = 0; row < bitmapInfoHeader.biHeight; row++)
+    {
+      int
+        first_data_of_this_line_written;
+      first_data_of_this_line_written = 0;
+
+      if (moduleData.getTTB()) {
+        //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row) * line_width;
+      }
+      else {
+        data_pointer = bitmapData + row * line_width;
+      }
+
+      if (!moduleData.getLTR())
+      {
+        data_pointer += ((bitmapInfoHeader.biWidth) * 3) - 1;
+      }
+
+      //We need to push 4 pixels into one 8-bit byte.
+      unsigned char
+        this_2bpp_byte;
+      int
+        sub_pixel_count;
+
+      this_2bpp_byte = 0x00;
+      sub_pixel_count = 0;
+
+      //work across the row.
+      for (col = 0; col < bitmapInfoHeader.biWidth; col++)
+      {
+        unsigned char
+          red;
+        unsigned char
+          green;
+        unsigned char
+          blue;
+
+        //pull the pixel out of the stream first statement is if the display goes left to right
+        //second statement is if the display goes right to left
+        if (moduleData.getLTR())
+        {
+          blue = *data_pointer++;
+          green = *data_pointer++;
+          red = *data_pointer++;
+        }
+        else
+        {
+          red = *data_pointer--;
+          green = *data_pointer--;
+          blue = *data_pointer--;
+        }
+
+        //Now decide what color of the ink we are
+        //going to use for this pixel.
+        unsigned char
+          sub_pixel_4bit;
+        unsigned char
+          grey_8bit;
+        grey_8bit = (0.30 * red) + (0.58 * green) + (0.11 * blue);
+        
+        //start checking the greyscale
+        sub_pixel_4bit = 0x00;
+
+        //check to see which grey scale it falls under. 
+        for (int i = 15; i >= 0; i--)
+        {
+          //check to see if this is the grey scale where our pixel aligns
+          if ((16*i) < grey_8bit && grey_8bit <= (16*(i+1)))
+          {
+            break;
+          }
+          //increment the grey scale
+          if ((sub_pixel_4bit & 0x01) == 0x00)
+          {
+            sub_pixel_4bit |= 0x01;
+          }
+          else
+          {
+            sub_pixel_4bit = sub_pixel_4bit << 0x01;
+          }
+        }
+
+
+      //Insert those bits into the correct slot of this_2bpp_byte
+        this_2bpp_byte |= (sub_pixel_4bit) << ((1 - sub_pixel_count) * 4);
+
+        //Move to the next sub-pixel
+        sub_pixel_count++;
+        //If this byte is full, write it out and clear for the 
+        //next 2 bytes.
+        if (1 < sub_pixel_count)
+        {
+          if (first_data_of_this_line_written)
+          {
+            fprintf(OutputDataFile, ",");
+          }
+          first_data_of_this_line_written = 1;
+          //Then write out the 8-bit packed pixel
+          fprintf(OutputDataFile, "0x%02X", this_2bpp_byte);
+          //Reset the byte accumulator and count
+          this_2bpp_byte = 0;
+          sub_pixel_count = 0;
+        }
+      }
+      //This is the last entry for this line. If we have not just written
+      //out the last byte, of this line write it out now.
+      if (sub_pixel_count)
+      {
+        if (first_data_of_this_line_written)
+        {
+          fprintf(OutputDataFile, ",");
+        }
+        first_data_of_this_line_written = 1;
+        //Then write out the 8bit packed pixel.
+        fprintf(OutputDataFile, "0x%02X", this_2bpp_byte);
+      }
+
+      if (oneDimArray)
+      {
+        //That is the end of one line. Complete the C syntax.
+        if (row == (bitmapInfoHeader.biHeight - 1))
+        {
+          fprintf(OutputDataFile, "};\n");
+        }
+        else
+        {
+          fprintf(OutputDataFile, ",\n   ");
+        }
+      }
+      else
+      {
+        //That is the end of one line. Complete the C syntax.
+        if (row == (bitmapInfoHeader.biHeight - 1))
+        {
+          fprintf(OutputDataFile, "}};\n");
+        }
+        else
+        {
+          fprintf(OutputDataFile, "},\n   {");
+        }
+      }
+    }
+  }//  OUTPUT4BPPGREY
+//===========================================================================
+
+
+
+
 
   if (moduleData.getBWBits() == 1)
   {
@@ -473,16 +642,16 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
     {
       if (oneDimArray)
       {
-      fprintf(OutputDataFile,
-        "\nconst uint8_t Mono_1BPP[%d] PROGMEM =\n  {",
-        bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
+        fprintf(OutputDataFile,
+                "\nconst uint8_t Mono_1BPP[%d] PROGMEM =\n  {",
+                bitmapInfoHeader.biHeight * ((bitmapInfoHeader.biWidth + 0x07) >> 3));
       }
       else
       {
-      fprintf(OutputDataFile,
-        "\nconst uint8_t Mono_1BPP[%d][%d] PROGMEM =\n  {{",
-        bitmapInfoHeader.biHeight,
-        (bitmapInfoHeader.biWidth + 0x07) >> 3);
+        fprintf(OutputDataFile,
+                "\nconst uint8_t Mono_1BPP[%d][%d] PROGMEM =\n  {{",
+                bitmapInfoHeader.biHeight,
+                (bitmapInfoHeader.biWidth + 0x07) >> 3);
       }
     }
     //Now we just loop down the file, line by line (bottom first),
@@ -499,7 +668,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
 
       if (moduleData.getTTB()) {
         //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
-        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row) * line_width;
       }
       else {
         data_pointer = bitmapData + row * line_width;
@@ -556,7 +725,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
           sub_pixel_1bit;
 
         //White is just above 50% grey
-        if (127 > ((red*.21) + (green*.72) + (blue*.07)))
+        if (127 > ((red * .21) + (green * .72) + (blue * .07)))
         {
           //black, put the ink
           if (!moduleData.getInverted())
@@ -600,34 +769,34 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
             {
               //addToRow(rlEncoded, &rle_active, &rle_counter, &arraySize, &rows, holder1, holder2, this_1bpp_byte);
                   //if we have a situation where we can increment the rle counter
-                  if (holder1 == holder2 && holder2 == this_1bpp_byte)
-                  {
-                    if (rle_active)
-                    {
-                      rle_counter++;
-                    }
-                    else
-                    {
-                      rle_counter = 3;
-                      rle_active = true;
-                    }
-                  }
-                  //situation where we've hit a byte that stops us from incrementing the rle counter
-                  else if (rle_active)
-                  {
-                    if (holder1 != holder2)
-                    {
-                      rows.rlePairs.push_back(rlePair_t{ rle_counter, holder1 });
-                      rle_active = false;
-                      arraySize += 2;
-                    }
-                  }
-                  //situation where we are not in a loop of the rle counter working
-                  else
-                  {
-                    rows.rlePairs.push_back(rlePair_t{ 1,holder1 });
-                    arraySize += 2;
-                  }
+              if (holder1 == holder2 && holder2 == this_1bpp_byte)
+              {
+                if (rle_active)
+                {
+                  rle_counter++;
+                }
+                else
+                {
+                  rle_counter = 3;
+                  rle_active = true;
+                }
+              }
+              //situation where we've hit a byte that stops us from incrementing the rle counter
+              else if (rle_active)
+              {
+                if (holder1 != holder2)
+                {
+                  rows.rlePairs.push_back(rlePair_t{ rle_counter, holder1 });
+                  rle_active = false;
+                  arraySize += 2;
+                }
+              }
+              //situation where we are not in a loop of the rle counter working
+              else
+              {
+                rows.rlePairs.push_back(rlePair_t{ 1,holder1 });
+                arraySize += 2;
+              }
             }
             else
             {
@@ -741,16 +910,16 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
       {
         fprintf(OutputDataFile, "\n#define MONO_ARRAY_SIZE (%d)\n", arraySize);
         fprintf(OutputDataFile,
-          "\nconst uint8_t Mono_1BPP[%d] PROGMEM =\n  {", arraySize);
+                "\nconst uint8_t Mono_1BPP[%d] PROGMEM =\n  {", arraySize);
       }
       else
       {
         fprintf(OutputDataFile, "\n#define MONO_WIDTH_SIZE (%d)", longestRow);
         fprintf(OutputDataFile, "\n#define MONO_HEIGHT_SIZE (%d)\n", bitmapInfoHeader.biHeight);
         fprintf(OutputDataFile,
-          "\nconst uint8_t Mono_1BPP[%d][%d] PROGMEM =\n  {{",
-          bitmapInfoHeader.biHeight,
-          longestRow);
+                "\nconst uint8_t Mono_1BPP[%d][%d] PROGMEM =\n  {{",
+                bitmapInfoHeader.biHeight,
+                longestRow);
       }
       //loop through the queue to print to the file
       unsigned char rle_count;
@@ -812,15 +981,15 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
       if (oneDimArray)
       {
         fprintf(OutputDataFile,
-          "\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {",
-          bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
+                "\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {",
+                bitmapInfoHeader.biHeight * ((bitmapInfoHeader.biWidth + 0x07) >> 3));
       }
       else
       {
         fprintf(OutputDataFile,
-          "\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
-          bitmapInfoHeader.biHeight,
-          (bitmapInfoHeader.biWidth + 0x07) >> 3);
+                "\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
+                bitmapInfoHeader.biHeight,
+                (bitmapInfoHeader.biWidth + 0x07) >> 3);
       }
     }
     //Now we just loop down the file, line by line (bottom first),
@@ -837,7 +1006,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
 
       if (moduleData.getTTB()) {
         //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
-        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row) * line_width;
       }
       else {
         data_pointer = bitmapData + row * line_width;
@@ -1078,16 +1247,16 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
       {
         fprintf(OutputDataFile, "\n#define RED_ARRAY_SIZE (%d)\n", arraySize);
         fprintf(OutputDataFile,
-          "\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {", arraySize);
+                "\nconst uint8_t Red_1BPP[%d] PROGMEM =\n  {", arraySize);
       }
       else
       {
         fprintf(OutputDataFile, "\n#define RED_WIDTH_SIZE (%d)", longestRow);
         fprintf(OutputDataFile, "\n#define RED_HEIGHT_SIZE (%d)\n", bitmapInfoHeader.biHeight);
         fprintf(OutputDataFile,
-          "\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
-          bitmapInfoHeader.biHeight,
-          longestRow);
+                "\nconst uint8_t Red_1BPP[%d][%d] PROGMEM =\n  {{",
+                bitmapInfoHeader.biHeight,
+                longestRow);
       }
       //loop through the queue to print to the file
       unsigned char rle_count;
@@ -1150,15 +1319,15 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
       if (oneDimArray)
       {
         fprintf(OutputDataFile,
-          "\nconst uint8_t Yellow_1BPP[%d] PROGMEM =\n  {",
-          bitmapInfoHeader.biHeight*((bitmapInfoHeader.biWidth + 0x07) >> 3));
+                "\nconst uint8_t Yellow_1BPP[%d] PROGMEM =\n  {",
+                bitmapInfoHeader.biHeight * ((bitmapInfoHeader.biWidth + 0x07) >> 3));
       }
       else
       {
         fprintf(OutputDataFile,
-          "\nconst uint8_t Yellow_1BPP[%d][%d] PROGMEM =\n  {{",
-          bitmapInfoHeader.biHeight,
-          (bitmapInfoHeader.biWidth + 0x07) >> 3);
+                "\nconst uint8_t Yellow_1BPP[%d][%d] PROGMEM =\n  {{",
+                bitmapInfoHeader.biHeight,
+                (bitmapInfoHeader.biWidth + 0x07) >> 3);
       }
     }
     //Now we just loop down the file, line by line (bottom first),
@@ -1175,7 +1344,7 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
 
       if (moduleData.getTTB()) {
         //Point to the current row in the bitmap data (starting at the bottom since bitmaps are upside down)
-        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row)*line_width;
+        data_pointer = bitmapData + (bitmapInfoHeader.biHeight - 1 - row) * line_width;
       }
       else {
         data_pointer = bitmapData + row * line_width;
@@ -1416,16 +1585,16 @@ int processImage(bool rlEncoded, bool oneDimArray, module_t moduleData, std::str
       {
         fprintf(OutputDataFile, "\n#define YELLOW_ARRAY_SIZE (%d)\n", arraySize);
         fprintf(OutputDataFile,
-          "\nconst uint8_t Yellow_1BPP[%d] PROGMEM =\n  {", arraySize);
+                "\nconst uint8_t Yellow_1BPP[%d] PROGMEM =\n  {", arraySize);
       }
       else
       {
         fprintf(OutputDataFile, "\n#define YELLOW_WIDTH_SIZE (%d)", longestRow);
         fprintf(OutputDataFile, "\n#define YELLOW_HEIGHT_SIZE (%d)\n", bitmapInfoHeader.biHeight);
         fprintf(OutputDataFile,
-          "\nconst uint8_t Yellow_1BPP[%d][%d] PROGMEM =\n  {{",
-          bitmapInfoHeader.biHeight,
-          longestRow);
+                "\nconst uint8_t Yellow_1BPP[%d][%d] PROGMEM =\n  {{",
+                bitmapInfoHeader.biHeight,
+                longestRow);
       }
       //loop through the queue to print to the file
       unsigned char rle_count;
