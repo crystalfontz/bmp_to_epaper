@@ -5,6 +5,8 @@ https://www.crystalfontz.com/c/epaper-displays/519
 
 Code generated in Visual Studio 2017 and all code supplied in the respective folders. Currently, only "*.bmp" files are accepted by the software.
 
+NOTE: This program currently requires that the headers in the bmp be a certain length. If a bmp with a different header size is imported, the program will run but will not export the header file. A work around for the moment is to edit the program in MS Paint and save as a 24-bit bmp and it will work with the program.
+
 ## Command Line
 Pass a .bmp file as the first argument and the CFA part number as the second argument to the executable.
 A .h file will be generated and saved in the same folder as the .bmp file. The header file can be used to generate an image on an ePaper display using the demo code supplied by Crystalfontz. Simple copy the new code and replace the existing code in any one of the "..._Images.h" files in the sample code.
